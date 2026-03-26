@@ -5,15 +5,19 @@ import {
   FlatList,
   TextInput,
   Pressable,
-  SafeAreaView,
   StatusBar,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useProjectStore } from '../store/useProjectStore';
+import { useAuthStore } from '../store/useAuthStore';
 import { ProjectCard } from '../components/ProjectCard';
-import { ProjectsListScreenProps } from '../navigation/types';
 import { colors } from '../theme/colors';
 import { Ionicons } from '@expo/vector-icons';
 import { ProjectStatus } from '../types';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { ProjectsStackParamList } from '../navigation/types';
+
+type Props = NativeStackScreenProps<ProjectsStackParamList, 'ProjectsList'>;
 
 const FILTER_OPTIONS: { label: string; value: ProjectStatus | 'all' }[] = [
   { label: 'All', value: 'all' },
@@ -23,10 +27,22 @@ const FILTER_OPTIONS: { label: string; value: ProjectStatus | 'all' }[] = [
   { label: 'Delivered', value: 'delivered' },
 ];
 
-export const ProjectsScreen: React.FC<ProjectsListScreenProps> = ({ navigation }) => {
-  const projects = useProjectStore((state) => state.projects);
+export const ProjectsScreen: React.FC<Props> = ({ navigation }) => {
+  const allProjects = useProjectStore((state) => state.projects);
+  const user = useAuthStore((s) => s.user);
+  const isManager = user?.role === 'manager';
+
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<ProjectStatus | 'all'>('all');
+
+  // Filter projects based on role
+  const projects = useMemo(() => {
+    if (isManager) return allProjects;
+    // Developer: only assigned projects
+    return allProjects.filter((p) =>
+      p.assignedDeveloperIds.includes(user?.id || '')
+    );
+  }, [allProjects, isManager, user?.id]);
 
   const filteredProjects = useMemo(() => {
     let result = projects;
@@ -45,7 +61,7 @@ export const ProjectsScreen: React.FC<ProjectsListScreenProps> = ({ navigation }
     }
 
     // Sort by deadline (closest first), then delivered at end
-    return result.sort((a, b) => {
+    return [...result].sort((a, b) => {
       if (a.status === 'delivered' && b.status !== 'delivered') return 1;
       if (a.status !== 'delivered' && b.status === 'delivered') return -1;
       return new Date(a.deadline).getTime() - new Date(b.deadline).getTime();
@@ -63,30 +79,32 @@ export const ProjectsScreen: React.FC<ProjectsListScreenProps> = ({ navigation }
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
           <View>
             <Text style={{ color: colors.text.primary, fontSize: 28, fontWeight: '800' }}>
-              Projects
+              {isManager ? 'Projects' : 'My Projects'}
             </Text>
             <Text style={{ color: colors.text.muted, fontSize: 14, marginTop: 2 }}>
               {activeCount} active project{activeCount !== 1 ? 's' : ''}
             </Text>
           </View>
-          <Pressable
-            onPress={() => navigation.navigate('AddEditProject', {})}
-            style={{
-              width: 44,
-              height: 44,
-              borderRadius: 22,
-              backgroundColor: colors.accent.primary,
-              alignItems: 'center',
-              justifyContent: 'center',
-              shadowColor: colors.accent.primary,
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.4,
-              shadowRadius: 8,
-              elevation: 6,
-            }}
-          >
-            <Ionicons name="add" size={26} color="#fff" />
-          </Pressable>
+          {isManager && (
+            <Pressable
+              onPress={() => navigation.navigate('AddEditProject', {})}
+              style={{
+                width: 44,
+                height: 44,
+                borderRadius: 22,
+                backgroundColor: colors.accent.primary,
+                alignItems: 'center',
+                justifyContent: 'center',
+                shadowColor: colors.accent.primary,
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.4,
+                shadowRadius: 8,
+                elevation: 6,
+              }}
+            >
+              <Ionicons name="add" size={26} color="#fff" />
+            </Pressable>
+          )}
         </View>
       </View>
 
@@ -142,7 +160,7 @@ export const ProjectsScreen: React.FC<ProjectsListScreenProps> = ({ navigation }
                 borderRadius: 20,
                 backgroundColor:
                   activeFilter === item.value
-                    ? colors.accent.primary
+                    ? isManager ? colors.accent.primary : colors.success
                     : colors.dark[600],
               }}
             >
@@ -181,7 +199,7 @@ export const ProjectsScreen: React.FC<ProjectsListScreenProps> = ({ navigation }
           <View style={{ alignItems: 'center', paddingTop: 60 }}>
             <Ionicons name="folder-open-outline" size={48} color={colors.text.muted} />
             <Text style={{ color: colors.text.muted, fontSize: 16, marginTop: 12 }}>
-              No projects found
+              {isManager ? 'No projects found' : 'No projects assigned to you yet'}
             </Text>
           </View>
         }

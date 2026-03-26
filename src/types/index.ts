@@ -1,5 +1,15 @@
 export type ProjectStatus = 'not_started' | 'in_progress' | 'review' | 'delivered';
 
+export type UserRole = 'manager' | 'developer';
+
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  password: string;
+  role: UserRole;
+}
+
 export interface Note {
   id: string;
   text: string;
@@ -16,6 +26,8 @@ export interface Project {
   status: ProjectStatus;
   nextAction: string;
   notes: Note[];
+  createdByManagerId: string;
+  assignedDeveloperIds: string[];
 }
 
 export const STATUS_LABELS: Record<ProjectStatus, string> = {

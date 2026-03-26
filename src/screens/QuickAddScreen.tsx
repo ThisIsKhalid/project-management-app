@@ -4,13 +4,14 @@ import {
   Text,
   ScrollView,
   Pressable,
-  SafeAreaView,
   StatusBar,
   Alert,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useProjectStore } from '../store/useProjectStore';
+import { useAuthStore } from '../store/useAuthStore';
 import { QuickAddScreenProps } from '../navigation/types';
 import { TextField } from '../components/DatePickerField';
 import { colors } from '../theme/colors';
@@ -19,6 +20,7 @@ import { ProjectStatus, STATUS_LABELS, STATUS_ORDER } from '../types';
 
 export const QuickAddScreen: React.FC<QuickAddScreenProps> = ({ navigation }) => {
   const addProject = useProjectStore((state) => state.addProject);
+  const user = useAuthStore((s) => s.user);
 
   const [clientName, setClientName] = useState('');
   const [projectTitle, setProjectTitle] = useState('');
@@ -49,6 +51,8 @@ export const QuickAddScreen: React.FC<QuickAddScreenProps> = ({ navigation }) =>
       deliveryDate: deliveryDate.trim() || deadline.trim(),
       status,
       nextAction: nextAction.trim(),
+      createdByManagerId: user?.id || '',
+      assignedDeveloperIds: [] as string[],
       notes: note.trim()
         ? [
             {

@@ -10,6 +10,8 @@ interface ProjectStore {
   addNote: (projectId: string, note: Note) => void;
   updateNextAction: (projectId: string, nextAction: string) => void;
   updateStatus: (projectId: string, status: ProjectStatus) => void;
+  assignDeveloper: (projectId: string, developerId: string) => void;
+  removeDeveloper: (projectId: string, developerId: string) => void;
 }
 
 export const useProjectStore = create<ProjectStore>((set) => ({
@@ -52,6 +54,24 @@ export const useProjectStore = create<ProjectStore>((set) => ({
     set((state) => ({
       projects: state.projects.map((p) =>
         p.id === projectId ? { ...p, status } : p
+      ),
+    })),
+
+  assignDeveloper: (projectId, developerId) =>
+    set((state) => ({
+      projects: state.projects.map((p) =>
+        p.id === projectId && !p.assignedDeveloperIds.includes(developerId)
+          ? { ...p, assignedDeveloperIds: [...p.assignedDeveloperIds, developerId] }
+          : p
+      ),
+    })),
+
+  removeDeveloper: (projectId, developerId) =>
+    set((state) => ({
+      projects: state.projects.map((p) =>
+        p.id === projectId
+          ? { ...p, assignedDeveloperIds: p.assignedDeveloperIds.filter((id) => id !== developerId) }
+          : p
       ),
     })),
 }));

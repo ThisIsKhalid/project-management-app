@@ -4,12 +4,13 @@ import {
   Text,
   ScrollView,
   Pressable,
-  SafeAreaView,
   Alert,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useProjectStore } from '../store/useProjectStore';
+import { useAuthStore } from '../store/useAuthStore';
 import { AddEditProjectScreenProps } from '../navigation/types';
 import { TextField } from '../components/DatePickerField';
 import { colors } from '../theme/colors';
@@ -25,6 +26,7 @@ export const AddEditProjectScreen: React.FC<AddEditProjectScreenProps> = ({
     projectId ? state.projects.find((p) => p.id === projectId) : undefined
   );
   const { addProject, updateProject } = useProjectStore();
+  const user = useAuthStore((s) => s.user);
   const isEditing = !!existingProject;
 
   const [clientName, setClientName] = useState('');
@@ -78,6 +80,8 @@ export const AddEditProjectScreen: React.FC<AddEditProjectScreenProps> = ({
         deliveryDate: deliveryDate.trim() || deadline.trim(),
         status,
         nextAction: nextAction.trim(),
+        createdByManagerId: user?.id || '',
+        assignedDeveloperIds: [] as string[],
         notes: [],
       };
       addProject(newProject);

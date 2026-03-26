@@ -10,6 +10,8 @@ export const dummyProjects: Project[] = [
     deliveryDate: '2026-03-30',
     status: 'in_progress',
     nextAction: 'Finalize checkout flow UI and send for review',
+    createdByManagerId: 'manager-1',
+    assignedDeveloperIds: ['dev-1'],
     notes: [
       {
         id: 'n1',
@@ -32,6 +34,8 @@ export const dummyProjects: Project[] = [
     deliveryDate: '2026-03-29',
     status: 'review',
     nextAction: 'Address QA feedback on appointment booking flow',
+    createdByManagerId: 'manager-1',
+    assignedDeveloperIds: ['dev-1'],
     notes: [
       {
         id: 'n3',
@@ -49,6 +53,8 @@ export const dummyProjects: Project[] = [
     deliveryDate: '2026-04-18',
     status: 'in_progress',
     nextAction: 'Build real-time chart components with D3.js',
+    createdByManagerId: 'manager-1',
+    assignedDeveloperIds: ['dev-1', 'dev-2'],
     notes: [
       {
         id: 'n4',
@@ -66,6 +72,8 @@ export const dummyProjects: Project[] = [
     deliveryDate: '2026-03-05',
     status: 'delivered',
     nextAction: '',
+    createdByManagerId: 'manager-1',
+    assignedDeveloperIds: [],
     notes: [
       {
         id: 'n5',
@@ -83,6 +91,8 @@ export const dummyProjects: Project[] = [
     deliveryDate: '2026-04-12',
     status: 'not_started',
     nextAction: 'Schedule kickoff meeting with client',
+    createdByManagerId: 'manager-1',
+    assignedDeveloperIds: [],
     notes: [],
   },
   {
@@ -94,6 +104,8 @@ export const dummyProjects: Project[] = [
     deliveryDate: '2026-03-26',
     status: 'in_progress',
     nextAction: 'Implement Stripe subscription billing integration',
+    createdByManagerId: 'manager-1',
+    assignedDeveloperIds: ['dev-1'],
     notes: [
       {
         id: 'n6',
@@ -116,6 +128,8 @@ export const dummyProjects: Project[] = [
     deliveryDate: '2026-05-02',
     status: 'in_progress',
     nextAction: 'Design property search with map integration',
+    createdByManagerId: 'manager-1',
+    assignedDeveloperIds: ['dev-2'],
     notes: [
       {
         id: 'n8',
@@ -133,6 +147,8 @@ export const dummyProjects: Project[] = [
     deliveryDate: '2026-03-28',
     status: 'review',
     nextAction: 'Fix video player buffering issue reported in QA',
+    createdByManagerId: 'manager-1',
+    assignedDeveloperIds: ['dev-2'],
     notes: [
       {
         id: 'n9',

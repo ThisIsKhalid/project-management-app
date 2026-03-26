@@ -2,19 +2,18 @@ import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
-  SafeAreaView,
   StatusBar,
   Modal,
   FlatList,
   Pressable,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Calendar, DateData } from 'react-native-calendars';
 import { useProjectStore } from '../store/useProjectStore';
-import { MonthlyPlanScreenProps } from '../navigation/types';
+import { useAuthStore } from '../store/useAuthStore';
 import { StatusBadge } from '../components/StatusBadge';
 import { colors } from '../theme/colors';
 import { Ionicons } from '@expo/vector-icons';
-import { Project } from '../types';
 
 function formatDate(dateStr: string): string {
   const d = new Date(dateStr);
@@ -26,8 +25,19 @@ function formatDate(dateStr: string): string {
   });
 }
 
-export const MonthlyPlannerScreen: React.FC<MonthlyPlanScreenProps> = () => {
-  const projects = useProjectStore((state) => state.projects);
+export const MonthlyPlannerScreen: React.FC = () => {
+  const allProjects = useProjectStore((state) => state.projects);
+  const user = useAuthStore((s) => s.user);
+  const isManager = user?.role === 'manager';
+
+  // Filter projects by role
+  const projects = useMemo(() => {
+    if (isManager) return allProjects;
+    return allProjects.filter((p) =>
+      p.assignedDeveloperIds.includes(user?.id || '')
+    );
+  }, [allProjects, isManager, user?.id]);
+
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
 
@@ -35,23 +45,16 @@ export const MonthlyPlannerScreen: React.FC<MonthlyPlanScreenProps> = () => {
     const marks: Record<string, any> = {};
 
     projects.forEach((project) => {
-      // Mark deadline
       if (project.deadline) {
         if (!marks[project.deadline]) {
           marks[project.deadline] = { dots: [], selected: false };
         }
-        const hasDot = marks[project.deadline].dots.some(
-          (d: any) => d.key === 'deadline'
-        );
-        if (!hasDot) {
-          marks[project.deadline].dots.push({
-            key: `deadline-${project.id}`,
-            color: project.status === 'delivered' ? colors.success : colors.danger,
-          });
-        }
+        marks[project.deadline].dots.push({
+          key: `deadline-${project.id}`,
+          color: project.status === 'delivered' ? colors.success : colors.danger,
+        });
       }
 
-      // Mark delivery date
       if (project.deliveryDate) {
         if (!marks[project.deliveryDate]) {
           marks[project.deliveryDate] = { dots: [], selected: false };
@@ -63,7 +66,6 @@ export const MonthlyPlannerScreen: React.FC<MonthlyPlanScreenProps> = () => {
       }
     });
 
-    // Mark selected date
     if (selectedDate && marks[selectedDate]) {
       marks[selectedDate] = {
         ...marks[selectedDate],
@@ -98,9 +100,8 @@ export const MonthlyPlannerScreen: React.FC<MonthlyPlanScreenProps> = () => {
     }
   };
 
-  // Stats
   const activeProjects = projects.filter((p) => p.status !== 'delivered');
-  const thisMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
+  const thisMonth = new Date().toISOString().slice(0, 7);
   const dueThisMonth = activeProjects.filter((p) => p.deadline.startsWith(thisMonth));
 
   return (
@@ -155,7 +156,7 @@ export const MonthlyPlannerScreen: React.FC<MonthlyPlanScreenProps> = () => {
             {activeProjects.length}
           </Text>
           <Text style={{ color: colors.text.muted, fontSize: 11, marginTop: 4 }}>
-            Active Projects
+            {isManager ? 'Active Projects' : 'My Active'}
           </Text>
         </View>
         <View
@@ -246,7 +247,6 @@ export const MonthlyPlannerScreen: React.FC<MonthlyPlanScreenProps> = () => {
             }}
             onPress={(e) => e.stopPropagation()}
           >
-            {/* Handle */}
             <View
               style={{
                 width: 40,

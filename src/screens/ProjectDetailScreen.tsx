@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -8,13 +8,15 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
-  SafeAreaView,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useProjectStore } from '../store/useProjectStore';
+import { useAuthStore } from '../store/useAuthStore';
 import { ProjectDetailScreenProps } from '../navigation/types';
 import { StatusBadge } from '../components/StatusBadge';
 import { StatusStepper } from '../components/StatusStepper';
 import { NoteItem } from '../components/NoteItem';
+import { AssignDeveloperModal } from '../components/AssignDeveloperModal';
 import { colors } from '../theme/colors';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -44,10 +46,14 @@ export const ProjectDetailScreen: React.FC<ProjectDetailScreenProps> = ({
   );
   const { updateStatus, updateNextAction, addNote, deleteProject } =
     useProjectStore();
+  const user = useAuthStore((s) => s.user);
+  const allUsers = useAuthStore((s) => s.users);
+  const isManager = user?.role === 'manager';
 
   const [newNote, setNewNote] = useState('');
   const [isEditingNextAction, setIsEditingNextAction] = useState(false);
   const [nextActionText, setNextActionText] = useState(project?.nextAction || '');
+  const [showAssignModal, setShowAssignModal] = useState(false);
 
   if (!project) {
     return (
@@ -58,6 +64,11 @@ export const ProjectDetailScreen: React.FC<ProjectDetailScreenProps> = ({
   }
 
   const daysLeft = getDaysUntilDeadline(project.deadline);
+
+  // Get assigned developer names
+  const assignedDevs = allUsers.filter((u) =>
+    project.assignedDeveloperIds.includes(u.id)
+  );
 
   const handleAddNote = () => {
     if (!newNote.trim()) return;
@@ -124,18 +135,20 @@ export const ProjectDetailScreen: React.FC<ProjectDetailScreenProps> = ({
                 <Ionicons name="chevron-back" size={22} color={colors.accent.secondary} />
                 <Text style={{ color: colors.accent.secondary, fontSize: 15 }}>Back</Text>
               </Pressable>
-              <View style={{ flexDirection: 'row', gap: 12 }}>
-                <Pressable
-                  onPress={() =>
-                    navigation.navigate('AddEditProject', { projectId: project.id })
-                  }
-                >
-                  <Ionicons name="create-outline" size={22} color={colors.text.secondary} />
-                </Pressable>
-                <Pressable onPress={handleDelete}>
-                  <Ionicons name="trash-outline" size={22} color={colors.danger} />
-                </Pressable>
-              </View>
+              {isManager && (
+                <View style={{ flexDirection: 'row', gap: 12 }}>
+                  <Pressable
+                    onPress={() =>
+                      navigation.navigate('AddEditProject', { projectId: project.id })
+                    }
+                  >
+                    <Ionicons name="create-outline" size={22} color={colors.text.secondary} />
+                  </Pressable>
+                  <Pressable onPress={handleDelete}>
+                    <Ionicons name="trash-outline" size={22} color={colors.danger} />
+                  </Pressable>
+                </View>
+              )}
             </View>
 
             <Text
@@ -276,6 +289,88 @@ export const ProjectDetailScreen: React.FC<ProjectDetailScreenProps> = ({
                     : daysLeft === 0
                     ? '⚡ Due today'
                     : `⏰ ${daysLeft} days remaining`}
+                </Text>
+              </View>
+            )}
+          </View>
+
+          {/* Assigned Developers Section */}
+          <View
+            style={{
+              backgroundColor: colors.dark[800],
+              marginHorizontal: 16,
+              marginTop: 12,
+              borderRadius: 16,
+              padding: 20,
+            }}
+          >
+            <View
+              style={{
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: 12,
+              }}
+            >
+              <Text
+                style={{
+                  color: colors.text.secondary,
+                  fontSize: 13,
+                  fontWeight: '600',
+                  letterSpacing: 0.3,
+                }}
+              >
+                ASSIGNED DEVELOPERS ({assignedDevs.length})
+              </Text>
+              {isManager && (
+                <Pressable onPress={() => setShowAssignModal(true)}>
+                  <Ionicons name="person-add" size={18} color={colors.accent.secondary} />
+                </Pressable>
+              )}
+            </View>
+            {assignedDevs.length > 0 ? (
+              assignedDevs.map((dev) => (
+                <View
+                  key={dev.id}
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: 10,
+                    backgroundColor: colors.dark[700],
+                    borderRadius: 10,
+                    padding: 10,
+                    marginBottom: 6,
+                  }}
+                >
+                  <View
+                    style={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: 16,
+                      backgroundColor: colors.success,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <Text style={{ color: '#fff', fontSize: 14, fontWeight: '700' }}>
+                      {dev.name.charAt(0).toUpperCase()}
+                    </Text>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ color: colors.text.primary, fontSize: 14, fontWeight: '500' }}>
+                      {dev.name}
+                    </Text>
+                    <Text style={{ color: colors.text.muted, fontSize: 11 }}>
+                      {dev.email}
+                    </Text>
+                  </View>
+                </View>
+              ))
+            ) : (
+              <View style={{ alignItems: 'center', paddingVertical: 12 }}>
+                <Ionicons name="people-outline" size={24} color={colors.text.muted} />
+                <Text style={{ color: colors.text.muted, fontSize: 12, marginTop: 6 }}>
+                  No developers assigned
                 </Text>
               </View>
             )}
@@ -487,6 +582,15 @@ export const ProjectDetailScreen: React.FC<ProjectDetailScreenProps> = ({
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* Assign Developer Modal (Manager only) */}
+      {isManager && (
+        <AssignDeveloperModal
+          visible={showAssignModal}
+          onClose={() => setShowAssignModal(false)}
+          projectId={projectId}
+        />
+      )}
     </SafeAreaView>
   );
 };
