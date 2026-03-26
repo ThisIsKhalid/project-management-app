@@ -1,0 +1,149 @@
+import { Project } from '../types';
+
+export const dummyProjects: Project[] = [
+  {
+    id: '1',
+    clientName: 'Acme Corp',
+    projectTitle: 'E-Commerce Platform Redesign',
+    startDate: '2026-03-01',
+    deadline: '2026-03-28',
+    deliveryDate: '2026-03-30',
+    status: 'in_progress',
+    nextAction: 'Finalize checkout flow UI and send for review',
+    notes: [
+      {
+        id: 'n1',
+        text: 'Client wants a minimalist design approach. Shared mood board via email.',
+        createdAt: '2026-03-02T10:00:00Z',
+      },
+      {
+        id: 'n2',
+        text: 'Payment gateway integration approved — going with Stripe.',
+        createdAt: '2026-03-10T14:30:00Z',
+      },
+    ],
+  },
+  {
+    id: '2',
+    clientName: 'Nova Health',
+    projectTitle: 'Patient Portal Mobile App',
+    startDate: '2026-02-15',
+    deadline: '2026-03-27',
+    deliveryDate: '2026-03-29',
+    status: 'review',
+    nextAction: 'Address QA feedback on appointment booking flow',
+    notes: [
+      {
+        id: 'n3',
+        text: 'HIPAA compliance checklist completed. All good to proceed.',
+        createdAt: '2026-02-20T09:00:00Z',
+      },
+    ],
+  },
+  {
+    id: '3',
+    clientName: 'TechVenture Labs',
+    projectTitle: 'AI Analytics Dashboard',
+    startDate: '2026-03-10',
+    deadline: '2026-04-15',
+    deliveryDate: '2026-04-18',
+    status: 'in_progress',
+    nextAction: 'Build real-time chart components with D3.js',
+    notes: [
+      {
+        id: 'n4',
+        text: 'Using WebSocket for live data feeds. Backend team confirmed API specs.',
+        createdAt: '2026-03-12T11:00:00Z',
+      },
+    ],
+  },
+  {
+    id: '4',
+    clientName: 'Green Earth NGO',
+    projectTitle: 'Donation Tracking System',
+    startDate: '2026-01-20',
+    deadline: '2026-03-01',
+    deliveryDate: '2026-03-05',
+    status: 'delivered',
+    nextAction: '',
+    notes: [
+      {
+        id: 'n5',
+        text: 'Project delivered and client signed off. Great feedback received.',
+        createdAt: '2026-03-05T16:00:00Z',
+      },
+    ],
+  },
+  {
+    id: '5',
+    clientName: 'Bloom Café',
+    projectTitle: 'Online Ordering Website',
+    startDate: '2026-03-20',
+    deadline: '2026-04-10',
+    deliveryDate: '2026-04-12',
+    status: 'not_started',
+    nextAction: 'Schedule kickoff meeting with client',
+    notes: [],
+  },
+  {
+    id: '6',
+    clientName: 'UrbanFit',
+    projectTitle: 'Fitness Subscription Platform',
+    startDate: '2026-02-01',
+    deadline: '2026-03-25',
+    deliveryDate: '2026-03-26',
+    status: 'in_progress',
+    nextAction: 'Implement Stripe subscription billing integration',
+    notes: [
+      {
+        id: 'n6',
+        text: 'Wireframes approved. Moving to high-fidelity design.',
+        createdAt: '2026-02-10T10:00:00Z',
+      },
+      {
+        id: 'n7',
+        text: 'Backend APIs for user profiles and workout plans are ready.',
+        createdAt: '2026-03-01T08:30:00Z',
+      },
+    ],
+  },
+  {
+    id: '7',
+    clientName: 'Skyline Realty',
+    projectTitle: 'Property Listing SaaS',
+    startDate: '2026-03-15',
+    deadline: '2026-04-30',
+    deliveryDate: '2026-05-02',
+    status: 'in_progress',
+    nextAction: 'Design property search with map integration',
+    notes: [
+      {
+        id: 'n8',
+        text: 'Client requested Google Maps integration. Checking API costs.',
+        createdAt: '2026-03-16T09:00:00Z',
+      },
+    ],
+  },
+  {
+    id: '8',
+    clientName: 'EduSpark',
+    projectTitle: 'LMS Platform v2',
+    startDate: '2026-03-05',
+    deadline: '2026-03-26',
+    deliveryDate: '2026-03-28',
+    status: 'review',
+    nextAction: 'Fix video player buffering issue reported in QA',
+    notes: [
+      {
+        id: 'n9',
+        text: 'Migration from v1 database completed successfully.',
+        createdAt: '2026-03-08T14:00:00Z',
+      },
+      {
+        id: 'n10',
+        text: 'Load testing passed — supports 500 concurrent users.',
+        createdAt: '2026-03-20T11:00:00Z',
+      },
+    ],
+  },
+];
