@@ -220,14 +220,16 @@ export const AddEditProjectScreen: React.FC<AddEditProjectScreenProps> = ({
                 pressed && styles.submitBtnPressed,
               ]}
             >
-              <Ionicons
-                name={isEditing ? 'checkmark-circle' : 'add-circle'}
-                size={22}
-                color="#fff"
-              />
-              <Text style={styles.submitBtnText}>
-                {isEditing ? 'Save Changes' : 'Initialize Project'}
-              </Text>
+              <View style={styles.btnContent}>
+                <Ionicons
+                  name={isEditing ? 'checkmark-circle' : 'add-circle'}
+                  size={22}
+                  color="#fff"
+                />
+                <Text style={styles.submitBtnText}>
+                  {isEditing ? 'Save Changes' : 'Initialize Project'}
+                </Text>
+              </View>
             </Pressable>
           </View>
         </ScrollView>
@@ -324,16 +326,17 @@ const styles = StyleSheet.create({
     backgroundColor: colors.accent.primary,
     borderRadius: 20,
     paddingVertical: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'row',
-    gap: 10,
     marginTop: 8,
     shadowColor: colors.accent.primary,
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.4,
     shadowRadius: 20,
     elevation: 8,
+  },
+  btnContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   submitBtnPressed: {
     opacity: 0.9,
@@ -344,5 +347,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '800',
     letterSpacing: -0.5,
+    marginLeft: 8,
   },
 });

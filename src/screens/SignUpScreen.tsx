@@ -147,10 +147,10 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
               {loading ? (
                 <ActivityIndicator color="#fff" />
               ) : (
-                <>
+                <View style={styles.btnContent}>
                   <Text style={styles.signUpBtnText}>Register Now</Text>
                   <Ionicons name="checkmark-circle" size={18} color="#fff" />
-                </>
+                </View>
               )}
             </Pressable>
 
@@ -267,15 +267,16 @@ const styles = StyleSheet.create({
     backgroundColor: colors.accent.primary,
     borderRadius: 18,
     paddingVertical: 18,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 10,
     shadowColor: colors.accent.primary,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.4,
     shadowRadius: 16,
     elevation: 8,
+  },
+  btnContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   signUpBtnPressed: {
     opacity: 0.9,
@@ -285,6 +286,7 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '800',
+    marginRight: 8,
   },
   footer: {
     flexDirection: 'row',
