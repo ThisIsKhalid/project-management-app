@@ -4,12 +4,13 @@ import {
   Text,
   ScrollView,
   Pressable,
+  SafeAreaView,
   StatusBar,
   Alert,
   KeyboardAvoidingView,
   Platform,
+  StyleSheet,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useProjectStore } from '../store/useProjectStore';
 import { useAuthStore } from '../store/useAuthStore';
 import { QuickAddScreenProps } from '../navigation/types';
@@ -85,7 +86,7 @@ export const QuickAddScreen: React.FC<QuickAddScreenProps> = ({ navigation }) =>
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.dark[900] }}>
+    <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor={colors.dark[900]} />
       <KeyboardAvoidingView
         style={{ flex: 1 }}
@@ -93,34 +94,21 @@ export const QuickAddScreen: React.FC<QuickAddScreenProps> = ({ navigation }) =>
       >
         <ScrollView
           style={{ flex: 1 }}
-          contentContainerStyle={{ paddingBottom: 100 }}
+          contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
           {/* Header */}
-          <View style={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 16 }}>
-            <Text style={{ color: colors.text.primary, fontSize: 28, fontWeight: '800' }}>
-              Quick Add
-            </Text>
-            <Text style={{ color: colors.text.muted, fontSize: 14, marginTop: 2 }}>
-              Create a new project in seconds
-            </Text>
+          <View style={styles.header}>
+            <Text style={styles.headerSubtitle}>NEW PROJECT</Text>
+            <Text style={styles.headerTitle}>Quick Add</Text>
           </View>
 
-          <View style={{ paddingHorizontal: 20 }}>
-            {/* Client & Project Info */}
-            <View
-              style={{
-                backgroundColor: colors.dark[800],
-                borderRadius: 16,
-                padding: 20,
-                marginBottom: 12,
-              }}
-            >
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-                <Ionicons name="business-outline" size={18} color={colors.accent.secondary} />
-                <Text style={{ color: colors.text.secondary, fontSize: 14, fontWeight: '600' }}>
-                  Project Info
-                </Text>
+          <View style={styles.form}>
+            {/* Project Info Section */}
+            <View style={styles.section}>
+              <View style={styles.sectionTitleRow}>
+                <Ionicons name="business" size={16} color={colors.accent.primary} />
+                <Text style={styles.sectionTitle}>CLIENT & PROJECT</Text>
               </View>
               <TextField
                 label="Client Name *"
@@ -136,71 +124,53 @@ export const QuickAddScreen: React.FC<QuickAddScreenProps> = ({ navigation }) =>
               />
             </View>
 
-            {/* Dates */}
-            <View
-              style={{
-                backgroundColor: colors.dark[800],
-                borderRadius: 16,
-                padding: 20,
-                marginBottom: 12,
-              }}
-            >
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-                <Ionicons name="calendar-outline" size={18} color={colors.accent.secondary} />
-                <Text style={{ color: colors.text.secondary, fontSize: 14, fontWeight: '600' }}>
-                  Dates
-                </Text>
+            {/* Dates Section */}
+            <View style={styles.section}>
+              <View style={styles.sectionTitleRow}>
+                <Ionicons name="calendar-clear" size={16} color={colors.accent.primary} />
+                <Text style={styles.sectionTitle}>TIMELINE</Text>
               </View>
-              <TextField
-                label="Deadline * (YYYY-MM-DD)"
-                value={deadline}
-                onChange={setDeadline}
-                placeholder="e.g. 2026-04-15"
-              />
-              <TextField
-                label="Delivery Date (YYYY-MM-DD)"
-                value={deliveryDate}
-                onChange={setDeliveryDate}
-                placeholder="e.g. 2026-04-18"
-              />
+              <View style={styles.dateRow}>
+                <View style={{ flex: 1 }}>
+                  <TextField
+                    label="Deadline *"
+                    value={deadline}
+                    onChange={setDeadline}
+                    placeholder="YYYY-MM-DD"
+                  />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <TextField
+                    label="Delivery Date"
+                    value={deliveryDate}
+                    onChange={setDeliveryDate}
+                    placeholder="YYYY-MM-DD"
+                  />
+                </View>
+              </View>
             </View>
 
-            {/* Status */}
-            <View
-              style={{
-                backgroundColor: colors.dark[800],
-                borderRadius: 16,
-                padding: 20,
-                marginBottom: 12,
-              }}
-            >
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-                <Ionicons name="pulse-outline" size={18} color={colors.accent.secondary} />
-                <Text style={{ color: colors.text.secondary, fontSize: 14, fontWeight: '600' }}>
-                  Status
-                </Text>
+            {/* Status Section */}
+            <View style={styles.section}>
+              <View style={styles.sectionTitleRow}>
+                <Ionicons name="pulse" size={16} color={colors.accent.primary} />
+                <Text style={styles.sectionTitle}>STATUS</Text>
               </View>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+              <View style={styles.statusGrid}>
                 {STATUS_ORDER.map((s) => (
                   <Pressable
                     key={s}
                     onPress={() => setStatus(s)}
-                    style={{
-                      paddingHorizontal: 16,
-                      paddingVertical: 10,
-                      borderRadius: 10,
-                      backgroundColor:
-                        status === s ? colors.accent.primary : colors.dark[600],
-                      borderWidth: status === s ? 0 : 1,
-                      borderColor: colors.dark[500],
-                    }}
+                    style={[
+                      styles.statusBadge,
+                      status === s && styles.statusBadgeActive,
+                    ]}
                   >
                     <Text
-                      style={{
-                        color: status === s ? '#fff' : colors.text.secondary,
-                        fontSize: 13,
-                        fontWeight: status === s ? '600' : '400',
-                      }}
+                      style={[
+                        styles.statusText,
+                        status === s && styles.statusTextActive,
+                      ]}
                     >
                       {STATUS_LABELS[s]}
                     </Text>
@@ -209,32 +179,23 @@ export const QuickAddScreen: React.FC<QuickAddScreenProps> = ({ navigation }) =>
               </View>
             </View>
 
-            {/* Quick Details */}
-            <View
-              style={{
-                backgroundColor: colors.dark[800],
-                borderRadius: 16,
-                padding: 20,
-                marginBottom: 12,
-              }}
-            >
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-                <Ionicons name="flash-outline" size={18} color={colors.accent.secondary} />
-                <Text style={{ color: colors.text.secondary, fontSize: 14, fontWeight: '600' }}>
-                  Quick Details
-                </Text>
+            {/* Priority Section */}
+            <View style={styles.section}>
+              <View style={styles.sectionTitleRow}>
+                <Ionicons name="flash" size={16} color={colors.accent.primary} />
+                <Text style={styles.sectionTitle}>FIRST PRIORITY</Text>
               </View>
               <TextField
-                label="Next Action"
+                label="What needs to happen first?"
                 value={nextAction}
                 onChange={setNextAction}
-                placeholder="What's the first thing to do?"
+                placeholder="Log a next action..."
               />
               <TextField
                 label="Initial Note"
                 value={note}
                 onChange={setNote}
-                placeholder="Any initial notes about this project?"
+                placeholder="Any context to add?"
                 multiline
               />
             </View>
@@ -242,27 +203,13 @@ export const QuickAddScreen: React.FC<QuickAddScreenProps> = ({ navigation }) =>
             {/* Submit Button */}
             <Pressable
               onPress={handleSubmit}
-              style={({ pressed }) => ({
-                backgroundColor: colors.accent.primary,
-                borderRadius: 14,
-                paddingVertical: 16,
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexDirection: 'row',
-                gap: 8,
-                opacity: pressed ? 0.85 : 1,
-                shadowColor: colors.accent.primary,
-                shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: 0.4,
-                shadowRadius: 12,
-                elevation: 6,
-                marginTop: 8,
-              })}
+              style={({ pressed }) => [
+                styles.submitBtn,
+                pressed && styles.submitBtnPressed,
+              ]}
             >
               <Ionicons name="add-circle" size={22} color="#fff" />
-              <Text style={{ color: '#fff', fontSize: 16, fontWeight: '700' }}>
-                Create Project
-              </Text>
+              <Text style={styles.submitBtnText}>Launch Project</Text>
             </Pressable>
           </View>
         </ScrollView>
@@ -270,3 +217,108 @@ export const QuickAddScreen: React.FC<QuickAddScreenProps> = ({ navigation }) =>
     </SafeAreaView>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.dark[900],
+  },
+  scrollContent: {
+    paddingBottom: 100,
+  },
+  header: {
+    paddingHorizontal: 24,
+    paddingTop: 10,
+    paddingBottom: 20,
+  },
+  headerSubtitle: {
+    color: colors.accent.secondary,
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+  },
+  headerTitle: {
+    color: colors.text.primary,
+    fontSize: 28,
+    fontWeight: '900',
+    letterSpacing: -0.8,
+  },
+  form: {
+    paddingHorizontal: 24,
+  },
+  section: {
+    backgroundColor: colors.dark[800],
+    borderRadius: 24,
+    padding: 20,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: colors.dark[600],
+  },
+  sectionTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 20,
+  },
+  sectionTitle: {
+    color: colors.text.secondary,
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 1,
+  },
+  dateRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  statusGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  statusBadge: {
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 12,
+    backgroundColor: colors.dark[700],
+    borderWidth: 1,
+    borderColor: colors.dark[600],
+  },
+  statusBadgeActive: {
+    backgroundColor: colors.accent.primary,
+    borderColor: colors.accent.primary,
+  },
+  statusText: {
+    color: colors.text.secondary,
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  statusTextActive: {
+    color: '#fff',
+  },
+  submitBtn: {
+    backgroundColor: colors.accent.primary,
+    borderRadius: 20,
+    paddingVertical: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 8,
+    shadowColor: colors.accent.primary,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.4,
+    shadowRadius: 20,
+    elevation: 8,
+  },
+  submitBtnPressed: {
+    opacity: 0.9,
+    transform: [{ scale: 0.98 }],
+  },
+  submitBtnText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '800',
+    letterSpacing: -0.5,
+  },
+});

@@ -6,204 +6,302 @@ import {
   TextInput,
   Pressable,
   StatusBar,
+  StyleSheet,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useProjectStore } from '../store/useProjectStore';
 import { useAuthStore } from '../store/useAuthStore';
 import { ProjectCard } from '../components/ProjectCard';
+import { ProjectsListScreenProps } from '../navigation/types';
 import { colors } from '../theme/colors';
 import { Ionicons } from '@expo/vector-icons';
 import { ProjectStatus } from '../types';
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { ProjectsStackParamList } from '../navigation/types';
 
-type Props = NativeStackScreenProps<ProjectsStackParamList, 'ProjectsList'>;
-
-const FILTER_OPTIONS: { label: string; value: ProjectStatus | 'all' }[] = [
-  { label: 'All', value: 'all' },
-  { label: 'In Progress', value: 'in_progress' },
-  { label: 'Review', value: 'review' },
-  { label: 'Not Started', value: 'not_started' },
-  { label: 'Delivered', value: 'delivered' },
-];
-
-export const ProjectsScreen: React.FC<Props> = ({ navigation }) => {
-  const allProjects = useProjectStore((state) => state.projects);
+export const ProjectsScreen: React.FC<ProjectsListScreenProps> = ({ navigation }) => {
+  const projects = useProjectStore((state) => state.projects);
   const user = useAuthStore((s) => s.user);
   const isManager = user?.role === 'manager';
 
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<ProjectStatus | 'all'>('all');
 
-  // Filter projects based on role
-  const projects = useMemo(() => {
-    if (isManager) return allProjects;
-    // Developer: only assigned projects
-    return allProjects.filter((p) =>
-      p.assignedDeveloperIds.includes(user?.id || '')
-    );
-  }, [allProjects, isManager, user?.id]);
-
+  // Filter projects based on role and search/filter criteria
   const filteredProjects = useMemo(() => {
     let result = projects;
-
-    if (activeFilter !== 'all') {
-      result = result.filter((p) => p.status === activeFilter);
+    
+    // Role filtering
+    if (!isManager && user) {
+      result = result.filter((p) => p.assignedDeveloperIds.includes(user.id));
     }
 
+    // Search filtering
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       result = result.filter(
         (p) =>
-          p.clientName.toLowerCase().includes(query) ||
-          p.projectTitle.toLowerCase().includes(query)
+          p.projectTitle.toLowerCase().includes(query) ||
+          p.clientName.toLowerCase().includes(query)
       );
     }
 
-    // Sort by deadline (closest first), then delivered at end
-    return [...result].sort((a, b) => {
-      if (a.status === 'delivered' && b.status !== 'delivered') return 1;
-      if (a.status !== 'delivered' && b.status === 'delivered') return -1;
-      return new Date(a.deadline).getTime() - new Date(b.deadline).getTime();
-    });
-  }, [projects, searchQuery, activeFilter]);
+    // Status filtering
+    if (activeFilter !== 'all') {
+      result = result.filter((p) => p.status === activeFilter);
+    }
 
-  const activeCount = projects.filter((p) => p.status !== 'delivered').length;
+    return result;
+  }, [projects, searchQuery, activeFilter, isManager, user]);
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.dark[900] }}>
-      <StatusBar barStyle="light-content" backgroundColor={colors.dark[900]} />
-
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <StatusBar barStyle="light-content" />
+      
       {/* Header */}
-      <View style={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 }}>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-          <View>
-            <Text style={{ color: colors.text.primary, fontSize: 28, fontWeight: '800' }}>
-              {isManager ? 'Projects' : 'My Projects'}
-            </Text>
-            <Text style={{ color: colors.text.muted, fontSize: 14, marginTop: 2 }}>
-              {activeCount} active project{activeCount !== 1 ? 's' : ''}
-            </Text>
-          </View>
-          {isManager && (
-            <Pressable
-              onPress={() => navigation.navigate('AddEditProject', {})}
-              style={{
-                width: 44,
-                height: 44,
-                borderRadius: 22,
-                backgroundColor: colors.accent.primary,
-                alignItems: 'center',
-                justifyContent: 'center',
-                shadowColor: colors.accent.primary,
-                shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: 0.4,
-                shadowRadius: 8,
-                elevation: 6,
-              }}
-            >
-              <Ionicons name="add" size={26} color="#fff" />
-            </Pressable>
-          )}
+      <View style={styles.header}>
+        <View>
+          <Text style={styles.headerSubtitle}>
+            {isManager ? 'MANAGING ALL' : 'YOUR'} PROJECTS
+          </Text>
+          <Text style={styles.headerTitle}>
+            {isManager ? 'Dashboard' : 'My Projects'}
+          </Text>
         </View>
+        <Pressable
+          onPress={() => navigation.navigate('Profile')}
+          style={styles.profileBtn}
+        >
+          <View style={styles.avatar}>
+            <Text style={styles.avatarText}>{user?.name.charAt(0)}</Text>
+          </View>
+        </Pressable>
       </View>
 
-      {/* Search Bar */}
-      <View style={{ paddingHorizontal: 16, paddingVertical: 8 }}>
-        <View
-          style={{
-            backgroundColor: colors.dark[700],
-            borderRadius: 14,
-            flexDirection: 'row',
-            alignItems: 'center',
-            paddingHorizontal: 14,
-            borderWidth: 1,
-            borderColor: colors.dark[500],
-          }}
-        >
+      {/* Search & Filters */}
+      <View style={styles.searchContainer}>
+        <View style={styles.searchBar}>
           <Ionicons name="search" size={18} color={colors.text.muted} />
           <TextInput
-            placeholder="Search projects..."
+            placeholder="Search projects or clients..."
             placeholderTextColor={colors.text.muted}
             value={searchQuery}
             onChangeText={setSearchQuery}
-            style={{
-              flex: 1,
-              color: colors.text.primary,
-              fontSize: 15,
-              paddingVertical: 12,
-              marginLeft: 10,
-            }}
+            style={styles.searchInput}
           />
-          {searchQuery ? (
+          {searchQuery.length > 0 && (
             <Pressable onPress={() => setSearchQuery('')}>
               <Ionicons name="close-circle" size={18} color={colors.text.muted} />
             </Pressable>
-          ) : null}
+          )}
         </View>
-      </View>
 
-      {/* Filter Pills */}
-      <View style={{ paddingLeft: 16, paddingVertical: 8 }}>
-        <FlatList
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          data={FILTER_OPTIONS}
-          keyExtractor={(item) => item.value}
-          contentContainerStyle={{ gap: 8, paddingRight: 16 }}
-          renderItem={({ item }) => (
+        <View style={styles.filterList}>
+          {(['all', 'not_started', 'in_progress', 'review', 'delivered'] as const).map((f) => (
             <Pressable
-              onPress={() => setActiveFilter(item.value)}
-              style={{
-                paddingHorizontal: 16,
-                paddingVertical: 8,
-                borderRadius: 20,
-                backgroundColor:
-                  activeFilter === item.value
-                    ? isManager ? colors.accent.primary : colors.success
-                    : colors.dark[600],
-              }}
+              key={f}
+              onPress={() => setActiveFilter(f)}
+              style={[
+                styles.filterBtn,
+                activeFilter === f && styles.filterBtnActive,
+              ]}
             >
               <Text
-                style={{
-                  color:
-                    activeFilter === item.value
-                      ? '#fff'
-                      : colors.text.secondary,
-                  fontSize: 13,
-                  fontWeight: '600',
-                }}
+                style={[
+                  styles.filterText,
+                  activeFilter === f && styles.filterTextActive,
+                ]}
               >
-                {item.label}
+                {f === 'all' ? 'All' : f.replace('_', ' ')}
               </Text>
             </Pressable>
-          )}
-        />
+          ))}
+        </View>
       </View>
 
       {/* Projects List */}
       <FlatList
         data={filteredProjects}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={{ paddingTop: 8, paddingBottom: 100 }}
-        showsVerticalScrollIndicator={false}
         renderItem={({ item }) => (
           <ProjectCard
             project={item}
-            onPress={() =>
-              navigation.navigate('ProjectDetail', { projectId: item.id })
-            }
+            onPress={() => navigation.navigate('ProjectDetail', { projectId: item.id })}
           />
         )}
+        contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
         ListEmptyComponent={
-          <View style={{ alignItems: 'center', paddingTop: 60 }}>
-            <Ionicons name="folder-open-outline" size={48} color={colors.text.muted} />
-            <Text style={{ color: colors.text.muted, fontSize: 16, marginTop: 12 }}>
-              {isManager ? 'No projects found' : 'No projects assigned to you yet'}
+          <View style={styles.emptyContainer}>
+            <View style={styles.emptyIconContainer}>
+               <Ionicons name="documents-outline" size={48} color={colors.text.muted} />
+            </View>
+            <Text style={styles.emptyTitle}>No projects found</Text>
+            <Text style={styles.emptySubtitle}>
+              Try adjusting your search or filters.
             </Text>
           </View>
         }
       />
+
+      {/* Add Button - Manager only */}
+      {isManager && (
+        <Pressable
+          onPress={() => navigation.navigate('AddEditProject', {})}
+          style={({ pressed }) => [
+            styles.fab,
+            { opacity: pressed ? 0.9 : 1, transform: [{ scale: pressed ? 0.95 : 1 }] }
+          ]}
+        >
+          <Ionicons name="add" size={28} color="#fff" />
+        </Pressable>
+      )}
     </SafeAreaView>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.dark[900],
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: colors.spacing.screen,
+    paddingTop: 10,
+    paddingBottom: 20,
+  },
+  headerSubtitle: {
+    color: colors.accent.secondary,
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+  },
+  headerTitle: {
+    color: colors.text.primary,
+    fontSize: 28,
+    fontWeight: '900',
+    letterSpacing: -0.8,
+  },
+  profileBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: colors.dark[700],
+    borderWidth: 1,
+    borderColor: colors.dark[500],
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: colors.accent.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  searchContainer: {
+    paddingHorizontal: colors.spacing.screen,
+    marginBottom: 20,
+  },
+  searchBar: {
+    backgroundColor: colors.dark[800],
+    borderRadius: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    borderWidth: 1,
+    borderColor: colors.dark[600],
+    marginBottom: 16,
+  },
+  searchInput: {
+    flex: 1,
+    color: colors.text.primary,
+    fontSize: 15,
+    paddingVertical: 14,
+    marginLeft: 10,
+  },
+  filterList: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  filterBtn: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 10,
+    backgroundColor: colors.dark[700],
+    borderWidth: 1,
+    borderColor: colors.dark[600],
+  },
+  filterBtnActive: {
+    backgroundColor: colors.accent.primary,
+    borderColor: colors.accent.primary,
+  },
+  filterText: {
+    color: colors.text.secondary,
+    fontSize: 12,
+    fontWeight: '600',
+    textTransform: 'capitalize',
+  },
+  filterTextActive: {
+    color: '#fff',
+  },
+  listContent: {
+    paddingBottom: 100,
+  },
+  emptyContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 80,
+    paddingHorizontal: 40,
+  },
+  emptyIconContainer: {
+    width: 100,
+    height: 100,
+    borderRadius: 30,
+    backgroundColor: colors.dark[800],
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: colors.dark[600],
+  },
+  emptyTitle: {
+    color: colors.text.primary,
+    fontSize: 18,
+    fontWeight: '800',
+    marginBottom: 8,
+  },
+  emptySubtitle: {
+    color: colors.text.muted,
+    fontSize: 14,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  fab: {
+    position: 'absolute',
+    right: 20,
+    bottom: 20,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: colors.accent.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: colors.accent.primary,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.4,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+});

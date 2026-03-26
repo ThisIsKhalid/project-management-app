@@ -6,365 +6,387 @@ import {
   Modal,
   FlatList,
   Pressable,
+  StyleSheet,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Calendar, DateData } from 'react-native-calendars';
 import { useProjectStore } from '../store/useProjectStore';
 import { useAuthStore } from '../store/useAuthStore';
-import { StatusBadge } from '../components/StatusBadge';
+import { ProjectCard } from '../components/ProjectCard';
 import { colors } from '../theme/colors';
 import { Ionicons } from '@expo/vector-icons';
 
-function formatDate(dateStr: string): string {
-  const d = new Date(dateStr);
-  return d.toLocaleDateString('en-US', {
-    weekday: 'long',
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric',
-  });
-}
-
 export const MonthlyPlannerScreen: React.FC = () => {
-  const allProjects = useProjectStore((state) => state.projects);
+  const projects = useProjectStore((state) => state.projects);
   const user = useAuthStore((s) => s.user);
   const isManager = user?.role === 'manager';
 
-  // Filter projects by role
-  const projects = useMemo(() => {
-    if (isManager) return allProjects;
-    return allProjects.filter((p) =>
-      p.assignedDeveloperIds.includes(user?.id || '')
-    );
-  }, [allProjects, isManager, user?.id]);
+  const [selectedDate, setSelectedDate] = useState(
+    new Date().toISOString().split('T')[0]
+  );
+  const [showDayProjects, setShowDayProjects] = useState(false);
 
-  const [selectedDate, setSelectedDate] = useState<string | null>(null);
-  const [modalVisible, setModalVisible] = useState(false);
+  // Filter projects based on role
+  const visibleProjects = useMemo(() => {
+    if (isManager) return projects;
+    return projects.filter((p) => p.assignedDeveloperIds.includes(user?.id || ''));
+  }, [projects, isManager, user]);
 
   const markedDates = useMemo(() => {
-    const marks: Record<string, any> = {};
-
-    projects.forEach((project) => {
-      if (project.deadline) {
-        if (!marks[project.deadline]) {
-          marks[project.deadline] = { dots: [], selected: false };
-        }
-        marks[project.deadline].dots.push({
-          key: `deadline-${project.id}`,
-          color: project.status === 'delivered' ? colors.success : colors.danger,
-        });
+    const marks: any = {};
+    visibleProjects.forEach((p) => {
+      // Mark deadline
+      if (!marks[p.deadline]) {
+        marks[p.deadline] = { dots: [] };
       }
+      marks[p.deadline].dots.push({
+        key: `${p.id}-deadline`,
+        color: colors.danger,
+        selectedDotColor: colors.white,
+      });
 
-      if (project.deliveryDate) {
-        if (!marks[project.deliveryDate]) {
-          marks[project.deliveryDate] = { dots: [], selected: false };
+      // Mark delivery
+      if (p.deliveryDate) {
+        if (!marks[p.deliveryDate]) {
+          marks[p.deliveryDate] = { dots: [] };
         }
-        marks[project.deliveryDate].dots.push({
-          key: `delivery-${project.id}`,
-          color: colors.info,
-        });
+        // Only add if not already added to avoid duplicates if deadline == delivery
+        if (!marks[p.deliveryDate].dots.find((d: any) => d.key === `${p.id}-delivery`)) {
+          marks[p.deliveryDate].dots.push({
+            key: `${p.id}-delivery`,
+            color: colors.success,
+            selectedDotColor: colors.white,
+          });
+        }
       }
     });
 
-    if (selectedDate && marks[selectedDate]) {
+    // Mark selected date
+    if (marks[selectedDate]) {
+      marks[selectedDate].selected = true;
+      marks[selectedDate].selectedColor = colors.accent.primary;
+    } else {
       marks[selectedDate] = {
-        ...marks[selectedDate],
         selected: true,
-        selectedColor: colors.accent.primary + '40',
-      };
-    } else if (selectedDate) {
-      marks[selectedDate] = {
-        dots: [],
-        selected: true,
-        selectedColor: colors.accent.primary + '40',
+        selectedColor: colors.accent.primary,
       };
     }
 
     return marks;
-  }, [projects, selectedDate]);
+  }, [visibleProjects, selectedDate]);
 
-  const selectedDateProjects = useMemo(() => {
-    if (!selectedDate) return [];
-    return projects.filter(
+  const projectsOnSelectedDate = useMemo(() => {
+    return visibleProjects.filter(
       (p) => p.deadline === selectedDate || p.deliveryDate === selectedDate
     );
-  }, [projects, selectedDate]);
-
-  const handleDayPress = (day: DateData) => {
-    setSelectedDate(day.dateString);
-    const projectsOnDate = projects.filter(
-      (p) => p.deadline === day.dateString || p.deliveryDate === day.dateString
-    );
-    if (projectsOnDate.length > 0) {
-      setModalVisible(true);
-    }
-  };
-
-  const activeProjects = projects.filter((p) => p.status !== 'delivered');
-  const thisMonth = new Date().toISOString().slice(0, 7);
-  const dueThisMonth = activeProjects.filter((p) => p.deadline.startsWith(thisMonth));
+  }, [visibleProjects, selectedDate]);
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.dark[900] }}>
-      <StatusBar barStyle="light-content" backgroundColor={colors.dark[900]} />
-
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <StatusBar barStyle="light-content" />
+      
       {/* Header */}
-      <View style={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 }}>
-        <Text style={{ color: colors.text.primary, fontSize: 28, fontWeight: '800' }}>
-          Monthly Plan
-        </Text>
-        <Text style={{ color: colors.text.muted, fontSize: 14, marginTop: 2 }}>
-          {dueThisMonth.length} deadline{dueThisMonth.length !== 1 ? 's' : ''} this month
-        </Text>
+      <View style={styles.header}>
+        <Text style={styles.headerSubtitle}>PLANNER</Text>
+        <Text style={styles.headerTitle}>Monthly Schedule</Text>
       </View>
 
-      {/* Summary Cards */}
-      <View
-        style={{
-          flexDirection: 'row',
-          paddingHorizontal: 16,
-          gap: 10,
-          marginVertical: 12,
-        }}
-      >
-        <View
-          style={{
-            flex: 1,
-            backgroundColor: colors.dark[700],
-            borderRadius: 14,
-            padding: 14,
-            alignItems: 'center',
-          }}
-        >
-          <Text style={{ color: colors.danger, fontSize: 24, fontWeight: '800' }}>
-            {dueThisMonth.length}
-          </Text>
-          <Text style={{ color: colors.text.muted, fontSize: 11, marginTop: 4 }}>
-            Due This Month
-          </Text>
-        </View>
-        <View
-          style={{
-            flex: 1,
-            backgroundColor: colors.dark[700],
-            borderRadius: 14,
-            padding: 14,
-            alignItems: 'center',
-          }}
-        >
-          <Text style={{ color: colors.info, fontSize: 24, fontWeight: '800' }}>
-            {activeProjects.length}
-          </Text>
-          <Text style={{ color: colors.text.muted, fontSize: 11, marginTop: 4 }}>
-            {isManager ? 'Active Projects' : 'My Active'}
-          </Text>
-        </View>
-        <View
-          style={{
-            flex: 1,
-            backgroundColor: colors.dark[700],
-            borderRadius: 14,
-            padding: 14,
-            alignItems: 'center',
-          }}
-        >
-          <Text style={{ color: colors.success, fontSize: 24, fontWeight: '800' }}>
-            {projects.filter((p) => p.status === 'delivered').length}
-          </Text>
-          <Text style={{ color: colors.text.muted, fontSize: 11, marginTop: 4 }}>
-            Delivered
-          </Text>
-        </View>
-      </View>
-
-      {/* Calendar */}
-      <View style={{ marginHorizontal: 16, borderRadius: 16, overflow: 'hidden' }}>
+      <View style={styles.calendarWrapper}>
         <Calendar
-          markingType="multi-dot"
-          markedDates={markedDates}
-          onDayPress={handleDayPress}
           theme={{
-            backgroundColor: colors.dark[800],
+            backgroundColor: colors.dark[900],
             calendarBackground: colors.dark[800],
-            textSectionTitleColor: colors.text.muted,
+            textSectionTitleColor: colors.text.secondary,
             selectedDayBackgroundColor: colors.accent.primary,
             selectedDayTextColor: '#ffffff',
-            todayTextColor: colors.accent.primary,
+            todayTextColor: colors.accent.secondary,
             dayTextColor: colors.text.primary,
             textDisabledColor: colors.dark[500],
-            monthTextColor: colors.text.primary,
+            dotColor: colors.accent.primary,
+            selectedDotColor: '#ffffff',
             arrowColor: colors.accent.secondary,
+            disabledArrowColor: colors.dark[600],
+            monthTextColor: colors.text.primary,
+            indicatorColor: colors.accent.primary,
+            textDayFontFamily: 'System',
+            textMonthFontFamily: 'System',
+            textDayHeaderFontFamily: 'System',
             textDayFontWeight: '500',
-            textMonthFontWeight: '700',
+            textMonthFontWeight: '800',
+            textDayHeaderFontWeight: '700',
             textDayFontSize: 14,
-            textMonthFontSize: 16,
+            textMonthFontSize: 18,
+            textDayHeaderFontSize: 12,
           }}
+          style={styles.calendar}
+          onDayPress={(day: DateData) => {
+            setSelectedDate(day.dateString);
+            if (visibleProjects.some(p => p.deadline === day.dateString || p.deliveryDate === day.dateString)) {
+              setShowDayProjects(true);
+            }
+          }}
+          markedDates={markedDates}
+          markingType={'multi-dot'}
         />
       </View>
 
       {/* Legend */}
-      <View
-        style={{
-          flexDirection: 'row',
-          justifyContent: 'center',
-          gap: 24,
-          marginTop: 16,
-        }}
-      >
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-          <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: colors.danger }} />
-          <Text style={{ color: colors.text.muted, fontSize: 12 }}>Deadline</Text>
+      <View style={styles.legend}>
+        <View style={styles.legendItem}>
+          <View style={[styles.legendDot, { backgroundColor: colors.danger }]} />
+          <Text style={styles.legendText}>Deadline</Text>
         </View>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-          <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: colors.info }} />
-          <Text style={{ color: colors.text.muted, fontSize: 12 }}>Delivery</Text>
+        <View style={styles.legendItem}>
+          <View style={[styles.legendDot, { backgroundColor: colors.success }]} />
+          <Text style={styles.legendText}>Delivery</Text>
         </View>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-          <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: colors.success }} />
-          <Text style={{ color: colors.text.muted, fontSize: 12 }}>Delivered</Text>
+        <View style={styles.legendItem}>
+          <View style={[styles.legendDot, { backgroundColor: colors.accent.secondary }]} />
+          <Text style={styles.legendText}>Today</Text>
         </View>
       </View>
 
-      {/* Date Projects Modal */}
+      {/* Daily Agenda Peek */}
+      <View style={styles.agendaPeek}>
+         <View style={styles.agendaHeader}>
+            <Text style={styles.agendaTitle}>Agenda for {new Date(selectedDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}</Text>
+         </View>
+         
+         {projectsOnSelectedDate.length > 0 ? (
+           <FlatList
+             data={projectsOnSelectedDate}
+             keyExtractor={(p) => p.id}
+             renderItem={({ item }) => (
+               <View style={styles.agendaItem}>
+                  <View style={[styles.agendaTypeLine, { 
+                    backgroundColor: item.deadline === selectedDate ? colors.danger : colors.success 
+                  }]} />
+                  <View style={styles.agendaItemContent}>
+                    <Text style={styles.agendaClient}>{item.clientName}</Text>
+                    <Text style={styles.agendaProject}>{item.projectTitle}</Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={16} color={colors.text.muted} />
+               </View>
+             )}
+             showsVerticalScrollIndicator={false}
+           />
+         ) : (
+           <View style={styles.emptyAgenda}>
+              <Ionicons name="calendar-outline" size={32} color={colors.dark[600]} />
+              <Text style={styles.emptyAgendaText}>No milestones on this day</Text>
+           </View>
+         )}
+      </View>
+
+      {/* Day Details Modal */}
       <Modal
-        animationType="slide"
+        visible={showDayProjects}
         transparent
-        visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}
+        animationType="slide"
+        onRequestClose={() => setShowDayProjects(false)}
       >
         <Pressable
-          style={{ flex: 1, backgroundColor: '#00000080', justifyContent: 'flex-end' }}
-          onPress={() => setModalVisible(false)}
+          style={styles.modalOverlay}
+          onPress={() => setShowDayProjects(false)}
         >
-          <Pressable
-            style={{
-              backgroundColor: colors.dark[800],
-              borderTopLeftRadius: 24,
-              borderTopRightRadius: 24,
-              paddingTop: 16,
-              paddingBottom: 40,
-              maxHeight: '60%',
-            }}
-            onPress={(e) => e.stopPropagation()}
-          >
-            <View
-              style={{
-                width: 40,
-                height: 4,
-                backgroundColor: colors.dark[500],
-                borderRadius: 2,
-                alignSelf: 'center',
-                marginBottom: 16,
-              }}
-            />
-            <Text
-              style={{
-                color: colors.text.primary,
-                fontSize: 18,
-                fontWeight: '700',
-                paddingHorizontal: 20,
-                marginBottom: 16,
-              }}
-            >
-              {selectedDate ? formatDate(selectedDate) : ''}
-            </Text>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <View style={styles.modalHandle} />
+              <Text style={styles.modalTitle}>
+                {new Date(selectedDate).toLocaleDateString('en-US', {
+                  month: 'long',
+                  day: 'numeric',
+                  year: 'numeric',
+                })}
+              </Text>
+              <Pressable onPress={() => setShowDayProjects(false)} style={styles.modalCloseBtn}>
+                <Ionicons name="close" size={24} color={colors.text.secondary} />
+              </Pressable>
+            </View>
+
             <FlatList
-              data={selectedDateProjects}
+              data={projectsOnSelectedDate}
               keyExtractor={(item) => item.id}
-              contentContainerStyle={{ paddingHorizontal: 20, gap: 10 }}
-              renderItem={({ item }) => {
-                const isDeadline = item.deadline === selectedDate;
-                const isDelivery = item.deliveryDate === selectedDate;
-                return (
-                  <View
-                    style={{
-                      backgroundColor: colors.dark[700],
-                      borderRadius: 12,
-                      padding: 14,
-                      borderLeftWidth: 3,
-                      borderLeftColor: isDeadline ? colors.danger : colors.info,
-                    }}
-                  >
-                    <View
-                      style={{
-                        flexDirection: 'row',
-                        justifyContent: 'space-between',
-                        alignItems: 'flex-start',
-                      }}
-                    >
-                      <View style={{ flex: 1 }}>
-                        <Text
-                          style={{
-                            color: colors.text.secondary,
-                            fontSize: 11,
-                            textTransform: 'uppercase',
-                          }}
-                        >
-                          {item.clientName}
-                        </Text>
-                        <Text
-                          style={{
-                            color: colors.text.primary,
-                            fontSize: 15,
-                            fontWeight: '600',
-                            marginTop: 2,
-                          }}
-                        >
-                          {item.projectTitle}
-                        </Text>
-                      </View>
-                      <StatusBadge status={item.status} size="sm" />
-                    </View>
-                    <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
-                      {isDeadline && (
-                        <View
-                          style={{
-                            flexDirection: 'row',
-                            alignItems: 'center',
-                            gap: 4,
-                            backgroundColor: '#FF6B6B20',
-                            paddingHorizontal: 8,
-                            paddingVertical: 3,
-                            borderRadius: 6,
-                          }}
-                        >
-                          <Ionicons name="flag" size={12} color={colors.danger} />
-                          <Text style={{ color: colors.danger, fontSize: 11, fontWeight: '600' }}>
-                            Deadline
-                          </Text>
-                        </View>
-                      )}
-                      {isDelivery && (
-                        <View
-                          style={{
-                            flexDirection: 'row',
-                            alignItems: 'center',
-                            gap: 4,
-                            backgroundColor: '#4DA6FF20',
-                            paddingHorizontal: 8,
-                            paddingVertical: 3,
-                            borderRadius: 6,
-                          }}
-                        >
-                          <Ionicons name="checkmark-circle" size={12} color={colors.info} />
-                          <Text style={{ color: colors.info, fontSize: 11, fontWeight: '600' }}>
-                            Delivery
-                          </Text>
-                        </View>
-                      )}
-                    </View>
-                  </View>
-                );
-              }}
-              ListEmptyComponent={
-                <Text style={{ color: colors.text.muted, textAlign: 'center', paddingVertical: 20 }}>
-                  No projects on this date
-                </Text>
-              }
+              contentContainerStyle={styles.modalList}
+              renderItem={({ item }) => (
+                <ProjectCard
+                  project={item}
+                  onPress={() => {
+                    setShowDayProjects(false);
+                    // This might need global navigation if not in same stack
+                  }}
+                />
+              )}
             />
-          </Pressable>
+          </View>
         </Pressable>
       </Modal>
     </SafeAreaView>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.dark[900],
+  },
+  header: {
+    paddingHorizontal: 24,
+    paddingTop: 10,
+    paddingBottom: 20,
+  },
+  headerSubtitle: {
+    color: colors.accent.secondary,
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+  },
+  headerTitle: {
+    color: colors.text.primary,
+    fontSize: 28,
+    fontWeight: '900',
+    letterSpacing: -0.8,
+  },
+  calendarWrapper: {
+    marginHorizontal: 16,
+    borderRadius: 24,
+    overflow: 'hidden',
+    backgroundColor: colors.dark[800],
+    borderWidth: 1,
+    borderColor: colors.dark[600],
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    elevation: 8,
+  },
+  calendar: {
+    borderRadius: 24,
+  },
+  legend: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 20,
+    paddingVertical: 20,
+  },
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  legendDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  legendText: {
+    color: colors.text.secondary,
+    fontSize: 11,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+  },
+  agendaPeek: {
+    flex: 1,
+    backgroundColor: colors.dark[800],
+    marginHorizontal: 16,
+    marginBottom: 16,
+    borderRadius: 24,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: colors.dark[600],
+  },
+  agendaHeader: {
+    marginBottom: 16,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.dark[600],
+  },
+  agendaTitle: {
+    color: colors.text.primary,
+    fontSize: 15,
+    fontWeight: '800',
+  },
+  agendaItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.dark[700],
+    borderRadius: 16,
+    padding: 12,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: colors.dark[600],
+  },
+  agendaTypeLine: {
+    width: 3,
+    height: 30,
+    borderRadius: 2,
+    marginRight: 12,
+  },
+  agendaItemContent: {
+    flex: 1,
+  },
+  agendaClient: {
+    color: colors.text.muted,
+    fontSize: 10,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+  },
+  agendaProject: {
+    color: colors.text.primary,
+    fontSize: 14,
+    fontWeight: '700',
+    marginTop: 2,
+  },
+  emptyAgenda: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    opacity: 0.5,
+  },
+  emptyAgendaText: {
+    color: colors.text.muted,
+    fontSize: 13,
+    marginTop: 8,
+    fontWeight: '600',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: colors.dark[900],
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    minHeight: '40%',
+    maxHeight: '80%',
+    paddingTop: 16,
+    paddingBottom: 40,
+  },
+  modalHeader: {
+    alignItems: 'center',
+    paddingBottom: 20,
+    paddingHorizontal: 24,
+  },
+  modalHandle: {
+    width: 40,
+    height: 4,
+    backgroundColor: colors.dark[600],
+    borderRadius: 2,
+    marginBottom: 16,
+  },
+  modalTitle: {
+    color: colors.text.primary,
+    fontSize: 18,
+    fontWeight: '800',
+  },
+  modalCloseBtn: {
+    position: 'absolute',
+    right: 24,
+    top: 20,
+  },
+  modalList: {
+    paddingVertical: 10,
+  },
+});

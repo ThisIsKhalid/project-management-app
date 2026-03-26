@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { Note } from '../types';
 import { colors } from '../theme/colors';
 
@@ -25,34 +25,46 @@ function getRelativeTime(dateString: string): string {
 
 export const NoteItem: React.FC<NoteItemProps> = ({ note }) => {
   return (
-    <View
-      style={{
-        backgroundColor: colors.dark[700],
-        borderRadius: 12,
-        padding: 14,
-        marginBottom: 8,
-        borderLeftWidth: 3,
-        borderLeftColor: colors.accent.primary,
-      }}
-    >
-      <Text
-        style={{
-          color: colors.text.primary,
-          fontSize: 14,
-          lineHeight: 20,
-        }}
-      >
-        {note.text}
-      </Text>
-      <Text
-        style={{
-          color: colors.text.muted,
-          fontSize: 11,
-          marginTop: 8,
-        }}
-      >
-        {getRelativeTime(note.createdAt)}
-      </Text>
+    <View style={styles.container}>
+      <View style={styles.accentBar} />
+      <View style={styles.content}>
+        <Text style={styles.text}>{note.text}</Text>
+        <Text style={styles.timestamp}>{getRelativeTime(note.createdAt)}</Text>
+      </View>
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    backgroundColor: colors.dark[800],
+    borderRadius: 16,
+    marginBottom: 12,
+    flexDirection: 'row',
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: colors.dark[600],
+  },
+  accentBar: {
+    width: 4,
+    backgroundColor: colors.accent.primary,
+  },
+  content: {
+    flex: 1,
+    padding: 16,
+  },
+  text: {
+    color: colors.text.primary,
+    fontSize: 14,
+    lineHeight: 22,
+    fontWeight: '500',
+  },
+  timestamp: {
+    color: colors.text.muted,
+    fontSize: 11,
+    marginTop: 10,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+});

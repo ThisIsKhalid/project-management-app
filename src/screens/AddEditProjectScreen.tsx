@@ -7,6 +7,7 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  StyleSheet,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useProjectStore } from '../store/useProjectStore';
@@ -90,40 +91,38 @@ export const AddEditProjectScreen: React.FC<AddEditProjectScreenProps> = ({
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.dark[900] }}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <ScrollView
           style={{ flex: 1 }}
-          contentContainerStyle={{ paddingBottom: 40 }}
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
           {/* Header */}
-          <View style={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 16 }}>
+          <View style={styles.header}>
             <Pressable
               onPress={() => navigation.goBack()}
-              style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 12 }}
+              style={styles.backBtn}
             >
-              <Ionicons name="chevron-back" size={22} color={colors.accent.secondary} />
-              <Text style={{ color: colors.accent.secondary, fontSize: 15 }}>Back</Text>
+              <Ionicons name="chevron-back" size={24} color={colors.text.primary} />
             </Pressable>
-            <Text style={{ color: colors.text.primary, fontSize: 24, fontWeight: '800' }}>
+            <Text style={styles.headerTitle}>
               {isEditing ? 'Edit Project' : 'New Project'}
             </Text>
+            <View style={{ width: 44 }} />
           </View>
 
-          <View style={{ paddingHorizontal: 20 }}>
-            {/* Client & Project Info */}
-            <View
-              style={{
-                backgroundColor: colors.dark[800],
-                borderRadius: 16,
-                padding: 20,
-                marginBottom: 12,
-              }}
-            >
+          <View style={styles.form}>
+            {/* Core Info */}
+            <View style={styles.section}>
+              <View style={styles.sectionTitleRow}>
+                <Ionicons name="create" size={16} color={colors.accent.primary} />
+                <Text style={styles.sectionTitle}>CORE DETAILS</Text>
+              </View>
               <TextField
                 label="Client Name *"
                 value={clientName}
@@ -134,79 +133,63 @@ export const AddEditProjectScreen: React.FC<AddEditProjectScreenProps> = ({
                 label="Project Title *"
                 value={projectTitle}
                 onChange={setProjectTitle}
-                placeholder="e.g. Website Redesign"
+                placeholder="e.g. Mobile App"
               />
             </View>
 
-            {/* Dates */}
-            <View
-              style={{
-                backgroundColor: colors.dark[800],
-                borderRadius: 16,
-                padding: 20,
-                marginBottom: 12,
-              }}
-            >
+            {/* Timeline */}
+            <View style={styles.section}>
+               <View style={styles.sectionTitleRow}>
+                <Ionicons name="calendar-clear" size={16} color={colors.accent.primary} />
+                <Text style={styles.sectionTitle}>TIMELINE (YYYY-MM-DD)</Text>
+              </View>
               <TextField
-                label="Start Date (YYYY-MM-DD)"
+                label="Start Date"
                 value={startDate}
                 onChange={setStartDate}
                 placeholder="e.g. 2026-03-01"
               />
-              <TextField
-                label="Deadline * (YYYY-MM-DD)"
-                value={deadline}
-                onChange={setDeadline}
-                placeholder="e.g. 2026-04-15"
-              />
-              <TextField
-                label="Delivery Date (YYYY-MM-DD)"
-                value={deliveryDate}
-                onChange={setDeliveryDate}
-                placeholder="e.g. 2026-04-18"
-              />
+              <View style={styles.dateRow}>
+                <View style={{ flex: 1 }}>
+                  <TextField
+                    label="Deadline *"
+                    value={deadline}
+                    onChange={setDeadline}
+                    placeholder="2026-04-15"
+                  />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <TextField
+                    label="Delivery Date"
+                    value={deliveryDate}
+                    onChange={setDeliveryDate}
+                    placeholder="2026-04-18"
+                  />
+                </View>
+              </View>
             </View>
 
             {/* Status */}
-            <View
-              style={{
-                backgroundColor: colors.dark[800],
-                borderRadius: 16,
-                padding: 20,
-                marginBottom: 12,
-              }}
-            >
-              <Text
-                style={{
-                  color: colors.text.secondary,
-                  fontSize: 13,
-                  fontWeight: '600',
-                  marginBottom: 12,
-                }}
-              >
-                Status
-              </Text>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+            <View style={styles.section}>
+              <View style={styles.sectionTitleRow}>
+                <Ionicons name="pulse" size={16} color={colors.accent.primary} />
+                <Text style={styles.sectionTitle}>STATUS</Text>
+              </View>
+              <View style={styles.statusGrid}>
                 {STATUS_ORDER.map((s) => (
                   <Pressable
                     key={s}
                     onPress={() => setStatus(s)}
-                    style={{
-                      paddingHorizontal: 16,
-                      paddingVertical: 10,
-                      borderRadius: 10,
-                      backgroundColor:
-                        status === s ? colors.accent.primary : colors.dark[600],
-                      borderWidth: status === s ? 0 : 1,
-                      borderColor: colors.dark[500],
-                    }}
+                    style={[
+                      styles.statusBadge,
+                      status === s && styles.statusBadgeActive,
+                    ]}
                   >
                     <Text
-                      style={{
-                        color: status === s ? '#fff' : colors.text.secondary,
-                        fontSize: 13,
-                        fontWeight: status === s ? '600' : '400',
-                      }}
+                      style={[
+                        styles.statusText,
+                        status === s && styles.statusTextActive,
+                      ]}
                     >
                       {STATUS_LABELS[s]}
                     </Text>
@@ -215,49 +198,35 @@ export const AddEditProjectScreen: React.FC<AddEditProjectScreenProps> = ({
               </View>
             </View>
 
-            {/* Next Action */}
-            <View
-              style={{
-                backgroundColor: colors.dark[800],
-                borderRadius: 16,
-                padding: 20,
-                marginBottom: 12,
-              }}
-            >
+            {/* Priority */}
+            <View style={styles.section}>
+              <View style={styles.sectionTitleRow}>
+                <Ionicons name="flash" size={16} color={colors.accent.primary} />
+                <Text style={styles.sectionTitle}>NEXT ACTION</Text>
+              </View>
               <TextField
-                label="Next Action"
+                label="What's the immediate priority?"
                 value={nextAction}
                 onChange={setNextAction}
-                placeholder="What needs to happen next?"
+                placeholder="e.g. Complete wireframes"
               />
             </View>
 
             {/* Submit */}
             <Pressable
               onPress={handleSubmit}
-              style={({ pressed }) => ({
-                backgroundColor: colors.accent.primary,
-                borderRadius: 14,
-                paddingVertical: 16,
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexDirection: 'row',
-                gap: 8,
-                opacity: pressed ? 0.85 : 1,
-                shadowColor: colors.accent.primary,
-                shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: 0.4,
-                shadowRadius: 12,
-                elevation: 6,
-              })}
+              style={({ pressed }) => [
+                styles.submitBtn,
+                pressed && styles.submitBtnPressed,
+              ]}
             >
               <Ionicons
                 name={isEditing ? 'checkmark-circle' : 'add-circle'}
                 size={22}
                 color="#fff"
               />
-              <Text style={{ color: '#fff', fontSize: 16, fontWeight: '700' }}>
-                {isEditing ? 'Save Changes' : 'Create Project'}
+              <Text style={styles.submitBtnText}>
+                {isEditing ? 'Save Changes' : 'Initialize Project'}
               </Text>
             </Pressable>
           </View>
@@ -266,3 +235,114 @@ export const AddEditProjectScreen: React.FC<AddEditProjectScreenProps> = ({
     </SafeAreaView>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.dark[900],
+  },
+  scrollContent: {
+    paddingBottom: 60,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+  },
+  backBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: colors.dark[800],
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: colors.dark[600],
+  },
+  headerTitle: {
+    color: colors.text.primary,
+    fontSize: 20,
+    fontWeight: '800',
+    letterSpacing: -0.5,
+  },
+  form: {
+    paddingHorizontal: 24,
+    marginTop: 10,
+  },
+  section: {
+    backgroundColor: colors.dark[800],
+    borderRadius: 24,
+    padding: 20,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: colors.dark[600],
+  },
+  sectionTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 20,
+  },
+  sectionTitle: {
+    color: colors.text.secondary,
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 1,
+  },
+  dateRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  statusGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  statusBadge: {
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 12,
+    backgroundColor: colors.dark[700],
+    borderWidth: 1,
+    borderColor: colors.dark[600],
+  },
+  statusBadgeActive: {
+    backgroundColor: colors.accent.primary,
+    borderColor: colors.accent.primary,
+  },
+  statusText: {
+    color: colors.text.secondary,
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  statusTextActive: {
+    color: '#fff',
+  },
+  submitBtn: {
+    backgroundColor: colors.accent.primary,
+    borderRadius: 20,
+    paddingVertical: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 8,
+    shadowColor: colors.accent.primary,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.4,
+    shadowRadius: 20,
+    elevation: 8,
+  },
+  submitBtnPressed: {
+    opacity: 0.9,
+    transform: [{ scale: 0.98 }],
+  },
+  submitBtnText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '800',
+    letterSpacing: -0.5,
+  },
+});

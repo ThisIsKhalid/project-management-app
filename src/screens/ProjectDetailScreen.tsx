@@ -8,6 +8,7 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  StyleSheet,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useProjectStore } from '../store/useProjectStore';
@@ -57,15 +58,13 @@ export const ProjectDetailScreen: React.FC<ProjectDetailScreenProps> = ({
 
   if (!project) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: colors.dark[900], alignItems: 'center', justifyContent: 'center' }}>
-        <Text style={{ color: colors.text.muted, fontSize: 16 }}>Project not found</Text>
+      <SafeAreaView style={styles.centerContainer} edges={['top']}>
+        <Text style={styles.errorText}>Project not found</Text>
       </SafeAreaView>
     );
   }
 
   const daysLeft = getDaysUntilDeadline(project.deadline);
-
-  // Get assigned developer names
   const assignedDevs = allUsers.filter((u) =>
     project.assignedDeveloperIds.includes(u.id)
   );
@@ -104,481 +103,228 @@ export const ProjectDetailScreen: React.FC<ProjectDetailScreenProps> = ({
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.dark[900] }}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <ScrollView
           style={{ flex: 1 }}
-          contentContainerStyle={{ paddingBottom: 40 }}
+          contentContainerStyle={{ paddingBottom: 60 }}
           showsVerticalScrollIndicator={false}
         >
-          {/* Header */}
-          <View style={{ paddingHorizontal: 20, paddingTop: 16 }}>
-            <View
-              style={{
-                flexDirection: 'row',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginBottom: 4,
-              }}
+          {/* Custom Header */}
+          <View style={styles.header}>
+            <Pressable
+              onPress={() => navigation.goBack()}
+              style={({ pressed }) => [styles.backBtn, pressed && { opacity: 0.7 }]}
             >
-              <Pressable
-                onPress={() => navigation.goBack()}
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  gap: 4,
-                }}
-              >
-                <Ionicons name="chevron-back" size={22} color={colors.accent.secondary} />
-                <Text style={{ color: colors.accent.secondary, fontSize: 15 }}>Back</Text>
-              </Pressable>
+              <Ionicons name="chevron-back" size={24} color={colors.text.primary} />
+            </Pressable>
+            
+            <View style={styles.headerActions}>
               {isManager && (
-                <View style={{ flexDirection: 'row', gap: 12 }}>
+                <>
                   <Pressable
-                    onPress={() =>
-                      navigation.navigate('AddEditProject', { projectId: project.id })
-                    }
+                    onPress={() => navigation.navigate('AddEditProject', { projectId: project.id })}
+                    style={styles.actionBtn}
                   >
-                    <Ionicons name="create-outline" size={22} color={colors.text.secondary} />
+                    <Ionicons name="pencil" size={20} color={colors.text.secondary} />
                   </Pressable>
-                  <Pressable onPress={handleDelete}>
-                    <Ionicons name="trash-outline" size={22} color={colors.danger} />
+                  <Pressable onPress={handleDelete} style={styles.actionBtn}>
+                    <Ionicons name="trash" size={20} color={colors.danger} />
                   </Pressable>
-                </View>
+                </>
               )}
             </View>
+          </View>
 
-            <Text
-              style={{
-                color: colors.text.secondary,
-                fontSize: 13,
-                fontWeight: '500',
-                textTransform: 'uppercase',
-                letterSpacing: 0.5,
-                marginTop: 16,
-              }}
-            >
-              {project.clientName}
-            </Text>
-            <Text
-              style={{
-                color: colors.text.primary,
-                fontSize: 24,
-                fontWeight: '800',
-                marginTop: 4,
-              }}
-            >
-              {project.projectTitle}
-            </Text>
-            <View style={{ marginTop: 10 }}>
+          {/* Title Section */}
+          <View style={styles.titleSection}>
+            <Text style={styles.clientLabel}>{project.clientName}</Text>
+            <Text style={styles.mainTitle}>{project.projectTitle}</Text>
+            <View style={styles.badgeRow}>
               <StatusBadge status={project.status} />
-            </View>
-          </View>
-
-          {/* Status Stepper */}
-          <View
-            style={{
-              backgroundColor: colors.dark[800],
-              marginHorizontal: 16,
-              marginTop: 20,
-              borderRadius: 16,
-              padding: 20,
-            }}
-          >
-            <Text
-              style={{
-                color: colors.text.secondary,
-                fontSize: 13,
-                fontWeight: '600',
-                marginBottom: 16,
-                letterSpacing: 0.3,
-              }}
-            >
-              STATUS TRACKER
-            </Text>
-            <StatusStepper
-              currentStatus={project.status}
-              onStatusChange={(status) => updateStatus(projectId, status)}
-            />
-          </View>
-
-          {/* Dates Section */}
-          <View
-            style={{
-              backgroundColor: colors.dark[800],
-              marginHorizontal: 16,
-              marginTop: 12,
-              borderRadius: 16,
-              padding: 20,
-            }}
-          >
-            <Text
-              style={{
-                color: colors.text.secondary,
-                fontSize: 13,
-                fontWeight: '600',
-                marginBottom: 16,
-                letterSpacing: 0.3,
-              }}
-            >
-              TIMELINE
-            </Text>
-            {[
-              { label: 'Start Date', value: project.startDate, icon: 'play-circle' as const },
-              { label: 'Deadline', value: project.deadline, icon: 'flag' as const },
-              { label: 'Delivery Date', value: project.deliveryDate, icon: 'checkmark-circle' as const },
-            ].map(({ label, value, icon }) => (
-              <View
-                key={label}
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  paddingVertical: 10,
-                  borderBottomWidth: 1,
-                  borderBottomColor: colors.dark[600],
-                }}
-              >
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                  <Ionicons name={icon} size={18} color={colors.accent.secondary} />
-                  <Text style={{ color: colors.text.secondary, fontSize: 14 }}>{label}</Text>
+              {project.status !== 'delivered' && (
+                <View style={[styles.deadlineTag, { 
+                  backgroundColor: daysLeft <= 3 ? colors.danger + '15' : colors.accent.soft 
+                }]}>
+                   <Text style={[styles.deadlineTagText, { 
+                     color: daysLeft <= 3 ? colors.danger : colors.accent.secondary 
+                   }]}>
+                     {daysLeft < 0 ? 'Overdue' : `${daysLeft} days remaining`}
+                   </Text>
                 </View>
-                <Text style={{ color: colors.text.primary, fontSize: 14, fontWeight: '600' }}>
-                  {formatDate(value)}
-                </Text>
-              </View>
-            ))}
-            {project.status !== 'delivered' && (
-              <View
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginTop: 12,
-                  paddingVertical: 8,
-                  backgroundColor:
-                    daysLeft < 0
-                      ? '#FF6B6B15'
-                      : daysLeft <= 3
-                      ? '#FF6B6B15'
-                      : daysLeft <= 7
-                      ? '#FFC04815'
-                      : '#00C9A715',
-                  borderRadius: 8,
-                }}
-              >
-                <Text
-                  style={{
-                    color:
-                      daysLeft < 0
-                        ? colors.danger
-                        : daysLeft <= 3
-                        ? colors.danger
-                        : daysLeft <= 7
-                        ? colors.warning
-                        : colors.success,
-                    fontSize: 13,
-                    fontWeight: '700',
-                  }}
-                >
-                  {daysLeft < 0
-                    ? `⚠️ ${Math.abs(daysLeft)} days overdue`
-                    : daysLeft === 0
-                    ? '⚡ Due today'
-                    : `⏰ ${daysLeft} days remaining`}
-                </Text>
-              </View>
-            )}
-          </View>
-
-          {/* Assigned Developers Section */}
-          <View
-            style={{
-              backgroundColor: colors.dark[800],
-              marginHorizontal: 16,
-              marginTop: 12,
-              borderRadius: 16,
-              padding: 20,
-            }}
-          >
-            <View
-              style={{
-                flexDirection: 'row',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginBottom: 12,
-              }}
-            >
-              <Text
-                style={{
-                  color: colors.text.secondary,
-                  fontSize: 13,
-                  fontWeight: '600',
-                  letterSpacing: 0.3,
-                }}
-              >
-                ASSIGNED DEVELOPERS ({assignedDevs.length})
-              </Text>
-              {isManager && (
-                <Pressable onPress={() => setShowAssignModal(true)}>
-                  <Ionicons name="person-add" size={18} color={colors.accent.secondary} />
-                </Pressable>
               )}
             </View>
-            {assignedDevs.length > 0 ? (
-              assignedDevs.map((dev) => (
-                <View
-                  key={dev.id}
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    gap: 10,
-                    backgroundColor: colors.dark[700],
-                    borderRadius: 10,
-                    padding: 10,
-                    marginBottom: 6,
-                  }}
-                >
-                  <View
-                    style={{
-                      width: 32,
-                      height: 32,
-                      borderRadius: 16,
-                      backgroundColor: colors.success,
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    <Text style={{ color: '#fff', fontSize: 14, fontWeight: '700' }}>
-                      {dev.name.charAt(0).toUpperCase()}
-                    </Text>
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ color: colors.text.primary, fontSize: 14, fontWeight: '500' }}>
-                      {dev.name}
-                    </Text>
-                    <Text style={{ color: colors.text.muted, fontSize: 11 }}>
-                      {dev.email}
-                    </Text>
-                  </View>
-                </View>
-              ))
-            ) : (
-              <View style={{ alignItems: 'center', paddingVertical: 12 }}>
-                <Ionicons name="people-outline" size={24} color={colors.text.muted} />
-                <Text style={{ color: colors.text.muted, fontSize: 12, marginTop: 6 }}>
-                  No developers assigned
-                </Text>
-              </View>
-            )}
           </View>
 
-          {/* Next Action */}
-          <View
-            style={{
-              backgroundColor: colors.dark[800],
-              marginHorizontal: 16,
-              marginTop: 12,
-              borderRadius: 16,
-              padding: 20,
-            }}
-          >
-            <View
-              style={{
-                flexDirection: 'row',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginBottom: 12,
-              }}
-            >
-              <Text
-                style={{
-                  color: colors.text.secondary,
-                  fontSize: 13,
-                  fontWeight: '600',
-                  letterSpacing: 0.3,
-                }}
-              >
-                WHAT TO DO NEXT
-              </Text>
+          {/* Quick Actions / What to do next */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <View style={styles.sectionTitleRow}>
+                <View style={styles.sectionIconBg}>
+                  <Ionicons name="flash" size={14} color={colors.accent.primary} />
+                </View>
+                <Text style={styles.sectionTitle}>NEXT PRIORITY</Text>
+              </View>
               {!isEditingNextAction && (
                 <Pressable onPress={() => setIsEditingNextAction(true)}>
-                  <Ionicons name="pencil" size={16} color={colors.accent.secondary} />
+                  <Text style={styles.editLink}>Edit</Text>
                 </Pressable>
               )}
             </View>
+            
             {isEditingNextAction ? (
-              <View>
+              <View style={styles.editWrapper}>
                 <TextInput
                   value={nextActionText}
                   onChangeText={setNextActionText}
-                  style={{
-                    backgroundColor: colors.dark[700],
-                    borderRadius: 10,
-                    padding: 12,
-                    color: colors.text.primary,
-                    fontSize: 14,
-                    borderWidth: 1,
-                    borderColor: colors.accent.primary,
-                  }}
-                  placeholder="What needs to happen next?"
+                  style={styles.editInput}
+                  placeholder="What's the next big thing?"
                   placeholderTextColor={colors.text.muted}
                   multiline
+                  autoFocus
                 />
-                <View
-                  style={{
-                    flexDirection: 'row',
-                    justifyContent: 'flex-end',
-                    gap: 10,
-                    marginTop: 10,
-                  }}
-                >
+                <View style={styles.editButtons}>
                   <Pressable
                     onPress={() => {
                       setNextActionText(project.nextAction);
                       setIsEditingNextAction(false);
                     }}
-                    style={{
-                      paddingHorizontal: 16,
-                      paddingVertical: 8,
-                      borderRadius: 8,
-                      backgroundColor: colors.dark[600],
-                    }}
+                    style={styles.cancelBtn}
                   >
-                    <Text style={{ color: colors.text.secondary, fontSize: 13 }}>Cancel</Text>
+                    <Text style={styles.cancelBtnText}>Discard</Text>
                   </Pressable>
-                  <Pressable
-                    onPress={handleSaveNextAction}
-                    style={{
-                      paddingHorizontal: 16,
-                      paddingVertical: 8,
-                      borderRadius: 8,
-                      backgroundColor: colors.accent.primary,
-                    }}
-                  >
-                    <Text style={{ color: '#fff', fontSize: 13, fontWeight: '600' }}>Save</Text>
+                  <Pressable onPress={handleSaveNextAction} style={styles.saveBtn}>
+                    <Text style={styles.saveBtnText}>Update Priority</Text>
                   </Pressable>
                 </View>
               </View>
             ) : (
-              <View
-                style={{
-                  backgroundColor: colors.dark[700],
-                  borderRadius: 10,
-                  padding: 14,
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  gap: 10,
-                }}
-              >
-                <Ionicons
-                  name="arrow-forward-circle"
-                  size={20}
-                  color={colors.accent.primary}
-                />
-                <Text
-                  style={{
-                    color: project.nextAction
-                      ? colors.text.primary
-                      : colors.text.muted,
-                    fontSize: 14,
-                    flex: 1,
-                    lineHeight: 20,
-                  }}
-                >
-                  {project.nextAction || 'No action set — tap the pencil to add one'}
+              <View style={styles.priorityCard}>
+                <Text style={[styles.priorityText, !project.nextAction && { color: colors.text.muted }]}>
+                  {project.nextAction || 'Define the next project milestone...'}
                 </Text>
               </View>
             )}
           </View>
 
-          {/* Notes Section */}
-          <View
-            style={{
-              backgroundColor: colors.dark[800],
-              marginHorizontal: 16,
-              marginTop: 12,
-              borderRadius: 16,
-              padding: 20,
-            }}
-          >
-            <Text
-              style={{
-                color: colors.text.secondary,
-                fontSize: 13,
-                fontWeight: '600',
-                marginBottom: 16,
-                letterSpacing: 0.3,
-              }}
-            >
-              NOTES ({project.notes.length})
-            </Text>
+          {/* Status Tracker */}
+          <View style={styles.section}>
+            <View style={styles.sectionTitleRow}>
+              <View style={styles.sectionIconBg}>
+                <Ionicons name="options" size={14} color={colors.accent.primary} />
+              </View>
+              <Text style={styles.sectionTitle}>PROJECT STATUS</Text>
+            </View>
+            <View style={styles.stepperContainer}>
+              <StatusStepper
+                currentStatus={project.status}
+                onStatusChange={(status) => updateStatus(projectId, status)}
+              />
+            </View>
+          </View>
 
-            {/* Add Note Input */}
-            <View
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                gap: 10,
-                marginBottom: 16,
-              }}
-            >
+          {/* Timeline Info */}
+          <View style={styles.section}>
+            <View style={styles.sectionTitleRow}>
+              <View style={styles.sectionIconBg}>
+                <Ionicons name="calendar" size={14} color={colors.accent.primary} />
+              </View>
+              <Text style={styles.sectionTitle}>TIMELINE</Text>
+            </View>
+            <View style={styles.timelineGrid}>
+              {[
+                { label: 'Started', date: project.startDate, icon: 'play' },
+                { label: 'Deadline', date: project.deadline, icon: 'flag' },
+                { label: 'Delivered', date: project.deliveryDate, icon: 'checkmark-circle' },
+              ].map((item, idx) => (
+                <View key={idx} style={styles.timelineItem}>
+                   <View style={styles.timelineDot} />
+                   <View>
+                     <Text style={styles.timelineLabel}>{item.label}</Text>
+                     <Text style={styles.timelineDate}>{formatDate(item.date)}</Text>
+                   </View>
+                </View>
+              ))}
+            </View>
+          </View>
+
+          {/* Team / Collaborators */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <View style={styles.sectionTitleRow}>
+                <View style={styles.sectionIconBg}>
+                  <Ionicons name="people" size={14} color={colors.accent.primary} />
+                </View>
+                <Text style={styles.sectionTitle}>PROJECT TEAM</Text>
+              </View>
+              {isManager && (
+                <Pressable 
+                  onPress={() => setShowAssignModal(true)}
+                  style={styles.addTeamBtn}
+                >
+                  <Ionicons name="person-add" size={14} color={colors.accent.primary} />
+                  <Text style={styles.addTeamText}>Add</Text>
+                </Pressable>
+              )}
+            </View>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.teamList}>
+              {assignedDevs.length > 0 ? (
+                assignedDevs.map((dev) => (
+                  <View key={dev.id} style={styles.teamMember}>
+                    <View style={styles.memberAvatar}>
+                      <Text style={styles.memberAvatarText}>{dev.name.charAt(0)}</Text>
+                    </View>
+                    <Text style={styles.memberName} numberOfLines={1}>{dev.name.split(' ')[0]}</Text>
+                  </View>
+                ))
+              ) : (
+                <Text style={styles.emptyTeamText}>No developers assigned yet</Text>
+              )}
+            </ScrollView>
+          </View>
+
+          {/* Journal / Notes */}
+          <View style={styles.section}>
+            <View style={styles.sectionTitleRow}>
+              <View style={styles.sectionIconBg}>
+                <Ionicons name="book" size={14} color={colors.accent.primary} />
+              </View>
+              <Text style={styles.sectionTitle}>PROJECT JOURNAL</Text>
+            </View>
+            
+            {/* Note Entry */}
+            <View style={styles.noteEntryWrapper}>
               <TextInput
                 value={newNote}
                 onChangeText={setNewNote}
-                placeholder="Add a note..."
+                placeholder="Log a progress update..."
                 placeholderTextColor={colors.text.muted}
-                style={{
-                  flex: 1,
-                  backgroundColor: colors.dark[700],
-                  borderRadius: 10,
-                  paddingHorizontal: 14,
-                  paddingVertical: 12,
-                  color: colors.text.primary,
-                  fontSize: 14,
-                  borderWidth: 1,
-                  borderColor: colors.dark[500],
-                }}
+                style={styles.noteInput}
                 multiline
               />
               <Pressable
                 onPress={handleAddNote}
-                style={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: 12,
-                  backgroundColor: newNote.trim()
-                    ? colors.accent.primary
-                    : colors.dark[600],
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
                 disabled={!newNote.trim()}
+                style={[styles.noteSendBtn, !newNote.trim() && { opacity: 0.5 }]}
               >
-                <Ionicons
-                  name="send"
-                  size={18}
-                  color={newNote.trim() ? '#fff' : colors.text.muted}
-                />
+                <Ionicons name="send" size={18} color="#fff" />
               </Pressable>
             </View>
 
             {/* Notes List */}
-            {project.notes.length > 0 ? (
-              [...project.notes]
-                .reverse()
-                .map((note) => <NoteItem key={note.id} note={note} />)
-            ) : (
-              <View style={{ alignItems: 'center', paddingVertical: 20 }}>
-                <Ionicons name="document-text-outline" size={32} color={colors.text.muted} />
-                <Text style={{ color: colors.text.muted, fontSize: 13, marginTop: 8 }}>
-                  No notes yet
-                </Text>
-              </View>
-            )}
+            <View style={styles.notesList}>
+              {[...project.notes].reverse().map((note) => (
+                <NoteItem key={note.id} note={note} />
+              ))}
+              {project.notes.length === 0 && (
+                <View style={styles.emptyNotes}>
+                   <Text style={styles.emptyNotesText}>No updates logged yet.</Text>
+                </View>
+              )}
+            </View>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -594,3 +340,311 @@ export const ProjectDetailScreen: React.FC<ProjectDetailScreenProps> = ({
     </SafeAreaView>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.dark[900],
+  },
+  centerContainer: {
+    flex: 1,
+    backgroundColor: colors.dark[900],
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  errorText: {
+    color: colors.text.muted,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+  },
+  backBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: colors.dark[800],
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: colors.dark[600],
+  },
+  headerActions: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  actionBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: colors.dark[800],
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: colors.dark[600],
+  },
+  titleSection: {
+    paddingHorizontal: 24,
+    paddingTop: 12,
+    paddingBottom: 24,
+  },
+  clientLabel: {
+    color: colors.accent.secondary,
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+    marginBottom: 6,
+  },
+  mainTitle: {
+    color: colors.text.primary,
+    fontSize: 32,
+    fontWeight: '900',
+    letterSpacing: -1,
+    marginBottom: 16,
+    lineHeight: 38,
+  },
+  badgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  deadlineTag: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  deadlineTagText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  section: {
+    paddingHorizontal: 24,
+    marginBottom: 32,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  sectionTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 16,
+  },
+  sectionIconBg: {
+    width: 24,
+    height: 24,
+    borderRadius: 8,
+    backgroundColor: colors.accent.soft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sectionTitle: {
+    color: colors.text.secondary,
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: 1.2,
+  },
+  editLink: {
+    color: colors.accent.secondary,
+    fontSize: 13,
+    fontWeight: '700',
+    marginBottom: 12,
+  },
+  priorityCard: {
+    backgroundColor: colors.dark[800],
+    borderRadius: 20,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: colors.dark[600],
+    shadowColor: colors.accent.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  priorityText: {
+    color: colors.text.primary,
+    fontSize: 16,
+    fontWeight: '600',
+    lineHeight: 24,
+  },
+  editWrapper: {
+    backgroundColor: colors.dark[800],
+    borderRadius: 20,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: colors.accent.primary,
+  },
+  editInput: {
+    color: colors.text.primary,
+    fontSize: 16,
+    fontWeight: '600',
+    minHeight: 80,
+    textAlignVertical: 'top',
+  },
+  editButtons: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 12,
+    marginTop: 16,
+  },
+  cancelBtn: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 12,
+    backgroundColor: colors.dark[600],
+  },
+  cancelBtnText: {
+    color: colors.text.secondary,
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  saveBtn: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 12,
+    backgroundColor: colors.accent.primary,
+  },
+  saveBtnText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  stepperContainer: {
+    backgroundColor: colors.dark[800],
+    borderRadius: 20,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: colors.dark[600],
+  },
+  timelineGrid: {
+    backgroundColor: colors.dark[800],
+    borderRadius: 20,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: colors.dark[600],
+    gap: 16,
+  },
+  timelineItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
+  timelineDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.accent.primary,
+  },
+  timelineLabel: {
+    color: colors.text.muted,
+    fontSize: 11,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+  },
+  timelineDate: {
+    color: colors.text.primary,
+    fontSize: 14,
+    fontWeight: '700',
+    marginTop: 2,
+  },
+  addTeamBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 10,
+    backgroundColor: colors.accent.soft,
+    marginBottom: 12,
+  },
+  addTeamText: {
+    color: colors.accent.primary,
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  teamList: {
+    gap: 16,
+    paddingRight: 24,
+  },
+  teamMember: {
+    alignItems: 'center',
+    width: 60,
+  },
+  memberAvatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 16,
+    backgroundColor: colors.dark[700],
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: colors.dark[500],
+    marginBottom: 8,
+  },
+  memberAvatarText: {
+    color: colors.accent.primary,
+    fontSize: 18,
+    fontWeight: '800',
+  },
+  memberName: {
+    color: colors.text.secondary,
+    fontSize: 11,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  emptyTeamText: {
+    color: colors.text.muted,
+    fontSize: 13,
+    fontStyle: 'italic',
+  },
+  noteEntryWrapper: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 24,
+  },
+  noteInput: {
+    flex: 1,
+    backgroundColor: colors.dark[800],
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    color: colors.text.primary,
+    fontSize: 15,
+    borderWidth: 1,
+    borderColor: colors.dark[600],
+    minHeight: 50,
+  },
+  noteSendBtn: {
+    width: 50,
+    height: 50,
+    borderRadius: 16,
+    backgroundColor: colors.accent.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: colors.accent.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+  },
+  notesList: {
+    gap: 12,
+  },
+  emptyNotes: {
+    alignItems: 'center',
+    paddingVertical: 20,
+  },
+  emptyNotesText: {
+    color: colors.text.muted,
+    fontSize: 14,
+  },
+});
